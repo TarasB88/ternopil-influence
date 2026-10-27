@@ -367,7 +367,7 @@ const headerAliases = {
   cases_age_5_9:['cases_age_5_9','5–9 років','5-9 років','Діти 5–9 років'],
   cases_age_10_14:['cases_age_10_14','10–14 років','10-14 років','Діти 10–14 років'],
   cases_age_15_17:['cases_age_15_17','15–17 років','15-17 років','Діти 15–17 років'],
-  vaccinated_total:['vaccinated_total','Вакциновано','Щеплено проти грипу','Кількість щеплених','Всього щеплено'],
+  vaccinated_total:['vaccinated_total','Вакциновано','Щеплено проти грипу','Кількість щеплених','Всього щеплено','Вакциновано всього'],\n  vaccination_brand:['vaccination_brand','Бренд вакцини','Назва вакцини','Вакцина'],\n  risk_group:['risk_group','Група ризику','Цільова група','Категорія ризику'],\n  vaccinated_count:['vaccinated_count','Кількість щеплень','Кількість вакцинованих','Щеплено осіб'],
 
   cases_total:['Захворіло всього','Усього захворіло','Всього захворіло','Всього випадків','Кількість захворілих','Грип та ГРВІ всього','Захворіло на грип та ГРВІ','Захворіло на ГРВІ','cases_total'],
   territory:['Територія','Територіальна одиниця','Область','Регіон','Територія звіту','Назва території','Адміністративно-територіальна одиниця','territory','region','oblast'], year:['Рік','Звітний рік','year'], week:['Тиждень','Звітний тиждень','Епідемічний тиждень','№ тижня','Номер тижня','week'],
@@ -469,7 +469,7 @@ async function refreshFromSheets(){
       columns[field]=headers.findIndex(h=>normalized.includes(h));
     }
     const mapped=rows.slice(1).map(row=>{
-      const obj={};for(const [field,index] of Object.entries(columns)){if(index>=0)obj[field]=['pcr_result_summary','schoolchildren_share_denominator','covid_cases_population'].includes(field)?((row[index]||'').trim()||null):field==='territory'?normalizeTerritory(row[index]):parseNumber(row[index]);} obj.territory=normalizeTerritory(obj.territory);
+      const obj={};for(const [field,index] of Object.entries(columns)){if(index>=0)obj[field]=['pcr_result_summary','schoolchildren_share_denominator','covid_cases_population','record_type','vaccination_brand','risk_group'].includes(field)?((row[index]||'').trim()||null):field==='territory'?(String(row[index]||'').trim()?normalizeTerritory(row[index]):null):parseNumber(row[index]);} if(obj.territory==null) return null;
       if(obj.covid_cases_population){const cp=String(obj.covid_cases_population).toLocaleLowerCase('uk-UA');obj.covid_cases_population=cp.includes('дорос')||cp==='adults'?'adults':cp.includes('все насел')||cp.includes('усього')||cp==='all_population'?'all_population':'unknown';}
       if(obj.schoolchildren_share_denominator){const sd=String(obj.schoolchildren_share_denominator).toLocaleLowerCase('uk-UA');obj.schoolchildren_share_denominator=sd.includes('діт')||sd==='cases_children'?'cases_children':sd.includes('всі')||sd.includes('усього')||sd==='cases_total'?'cases_total':'unknown';}
       obj.year=obj.year??null;obj.week=obj.week??null;
@@ -478,14 +478,14 @@ async function refreshFromSheets(){
       obj.report_date=parseDate(columns.report_date>=0?row[columns.report_date]:'')||obj.period_end;
       if(obj.year==null&&obj.period_end)obj.year=Number(obj.period_end.slice(0,4));
       if(obj.week==null&&obj.period_end){const d=new Date(obj.period_end+'T12:00:00Z');const jan4=new Date(Date.UTC(d.getUTCFullYear(),0,4));const day=(d.getUTCDay()+6)%7;const thursday=new Date(d);thursday.setUTCDate(d.getUTCDate()-day+3);const firstThursday=new Date(jan4);firstThursday.setUTCDate(jan4.getUTCDate()-((jan4.getUTCDay()+6)%7)+3);obj.week=1+Math.round((thursday-firstThursday)/(7*86400000));}
-      if(obj.year!=null&&obj.week!=null&&obj.cases_total!=null){obj.year=Number(obj.year);obj.week=Number(obj.week);return obj;}return null;
+      if(obj.year!=null&&obj.week!=null&&(obj.cases_total!=null||obj.vaccinated_total!=null||obj.vaccinated_count!=null)){obj.year=Number(obj.year);obj.week=Number(obj.week);if(obj.record_type){const rt=String(obj.record_type).toLocaleLowerCase('uk-UA');obj.record_type=rt.includes('total')||rt.includes('підсум')||rt.includes('облас')?'total':rt.includes('district')||rt.includes('район')?'district':rt.includes('city')||rt.includes('міст')?'city':rt;}return obj;}return null;
     }).filter(Boolean);
     // The generic parser can partially map a legacy report (e.g. only one district).
     // Prefer the legacy table parser whenever it recovers more territory rows.
     const legacyMapped=parseLegacyWeeklyReport(rows);
     if(legacyMapped.length>mapped.length) mapped.splice(0,mapped.length,...legacyMapped);
     if(mapped.length){
-      const data={periods:mapped.map(p=>({...p,territory:normalizeTerritory(p.territory)})),metadata:{source:'Google Sheets · '+new Date().toLocaleString(currentLanguage==='uk'?'uk-UA':'en-GB')}};
+      const data={periods:mapped.map(p=>({...p,territory:p.territory||null})),metadata:{source:'Google Sheets · '+new Date().toLocaleString(currentLanguage==='uk'?'uk-UA':'en-GB')}};
       window.liveSheetData=data;
       const territorySelect=document.getElementById('territorySelect');
       const previousTerritory=territorySelect.value||'Тернопільська область';
