@@ -265,7 +265,60 @@ const headerAliases = {
 };
 function normalizeHeader(s){return String(s||'').replace(/^\uFEFF/,'').trim().toLocaleLowerCase('uk-UA').replace(/[’‘ʼ]/g,"'").replace(/\s+/g,' ');}
 function parseNumber(v){if(v==null||String(v).trim()===''||['—','-','н/д','немає даних'].includes(String(v).trim().toLocaleLowerCase('uk-UA')))return null;const n=Number(String(v).replace(/\s/g,'').replace(',','.').replace('%',''));return Number.isFinite(n)?n:null;}
-function parseDate(v){if(!v)return null;const s=String(v).trim();let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');m=s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/);return m?m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'):null;}
+function parseDate(v){if(!v)return null;const s=String(v).trim();let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');m=s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{2,4})$/);if(!m)return null;let y=m[3];if(y.length===2)y='20'+y;return y+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');}
+function parseLegacyWeeklyReport(rows){
+  const headerIndex=rows.findIndex(r=>r.some(v=>/адмінтериторія|адміністративна територія/i.test(String(v||'')))&&r.some(v=>/всього захворіло|усього захворіло/i.test(String(v||''))));
+  if(headerIndex<0)return [];
+  const title=rows.slice(0,headerIndex+1).flat().join(' ');
+  const weekMatch=title.match(/(\d{1,2})\s*[-–.]?\s*тиждень/i);
+  const dateMatch=title.match(/(\d{1,2})[./](\d{1,2})[./](\d{2,4})\s*(?:р\.?\s*)?(?:по|—|–|-)\s*(\d{1,2})[./](\d{1,2})[./](\d{2,4})/i);
+  if(!weekMatch||!dateMatch)return [];
+  const start=parseDate(dateMatch[1]+'.'+dateMatch[2]+'.'+dateMatch[3]);
+  const end=parseDate(dateMatch[4]+'.'+dateMatch[5]+'.'+dateMatch[6]);
+  if(!start||!end)return [];
+  const header=rows[headerIndex].map(normalizeHeader);
+  const findHeader=(re,fallback)=>{const i=header.findIndex(v=>re.test(v));return i>=0?i:fallback;};
+  const ix={
+    territory:findHeader(/адмінтеритор|адміністративна територія/,1),
+    cases_total:findHeader(/всього захворіло|усього захворіло/,2),
+    cases_children:findHeader(/діти до 18|дітей до 18/,3),
+    cases_schoolchildren:findHeader(/шко.?ляр/,9),
+    hospitalized_total:findHeader(/госпіталізовано/,10),
+    incidence_per_100k:findHeader(/інт\.?\s*пок|інтенсивний показник|на 100 тис/,13)
+  };
+  const output=[];
+  for(const row of rows.slice(headerIndex+1)){
+    const territoryRaw=String(row[ix.territory]||'').trim();
+    if(!territoryRaw)continue;
+    const territory=normalizeTerritory(territoryRaw);
+    const isTotal=/^(всього|усього)(?:\s*:)?$/i.test(territoryRaw);
+    if(!isTotal&&!['Кременецький район','Чортківський район','Тернопільський район','м. Тернопіль'].includes(territory))continue;
+    const value=i=>parseNumber(row[i]);
+    const casesTotal=value(ix.cases_total);
+    if(casesTotal==null)continue;
+    const children=value(ix.cases_children), schoolchildren=value(ix.cases_schoolchildren);
+    const hospitalized=value(ix.hospitalized_total), hospitalizedChildren=value(11);
+    const incidence=value(ix.incidence_per_100k), lowThreshold=value(14);
+    output.push({
+      year:Number(end.slice(0,4)),week:Number(weekMatch[1]),period_start:start,period_end:end,report_date:end,
+      territory:isTotal?'Тернопільська область':territory,
+      cases_total:casesTotal,cases_children:children,cases_schoolchildren:schoolchildren,
+      children_share_pct:children!=null&&casesTotal>0?Math.round(children/casesTotal*1000)/10:null,
+      schoolchildren_share_pct:schoolchildren!=null&&children>0?Math.round(schoolchildren/children*1000)/10:null,
+      schoolchildren_share_denominator:'cases_children',
+      hospitalized_total:hospitalized,hospitalized_children:hospitalizedChildren,
+      hospitalized_children_share_pct:hospitalized!=null&&hospitalized>0&&hospitalizedChildren!=null?Math.round(hospitalizedChildren/hospitalized*1000)/10:null,
+      incidence_per_100k:incidence,
+      epidemic_threshold_difference_pct:incidence!=null&&lowThreshold!=null&&lowThreshold>0?Math.round((incidence/lowThreshold-1)*1000)/10:null,
+      cases_previous_week:null,cases_change_pct:null,children_previous_week:null,children_change_pct:null,
+      schoolchildren_previous_week:null,schoolchildren_change_pct:null,hospitalized_previous_week:null,hospitalizations_change_pct:null,
+      covid_cases:null,covid_cases_previous_week:null,covid_cases_population:null,deaths_influenza_covid:null,
+      pcr_tested:null,pcr_positive:null,pcr_result_summary:null,
+      wastewater_samples_total:null,wastewater_sars_cov2_positive:null,wastewater_influenza_ab_positive:null
+    });
+  }
+  return output;
+}
 async function refreshFromSheets(){
   const button=document.getElementById('refreshButton'), status=document.getElementById('refreshStatus');
   button.disabled=true; status.textContent=i18n[currentLanguage].loading;
@@ -291,6 +344,7 @@ async function refreshFromSheets(){
       if(obj.week==null&&obj.period_end){const d=new Date(obj.period_end+'T12:00:00Z');const jan4=new Date(Date.UTC(d.getUTCFullYear(),0,4));const day=(d.getUTCDay()+6)%7;const thursday=new Date(d);thursday.setUTCDate(d.getUTCDate()-day+3);const firstThursday=new Date(jan4);firstThursday.setUTCDate(jan4.getUTCDate()-((jan4.getUTCDay()+6)%7)+3);obj.week=1+Math.round((thursday-firstThursday)/(7*86400000));}
       if(obj.year!=null&&obj.week!=null&&obj.cases_total!=null){obj.year=Number(obj.year);obj.week=Number(obj.week);return obj;}return null;
     }).filter(Boolean);
+    if(!mapped.length) mapped.push(...parseLegacyWeeklyReport(rows));
     if(mapped.length){
       const data={periods:mapped.map(p=>({...p,territory:normalizeTerritory(p.territory)})),metadata:{source:'Google Sheets · '+new Date().toLocaleString(currentLanguage==='uk'?'uk-UA':'en-GB')}};
       window.liveSheetData=data;
