@@ -1,0 +1,297 @@
+{
+  "dictionary_version": "1.0.0",
+  "dashboard": "ternopil-influence",
+  "purpose": "Проміжний словник відповідності колонок Google Sheets до нормалізованої моделі даних дашборду грипу, ГРВІ та COVID-19.",
+  "source": {
+    "type": "google_sheets_published_csv",
+    "spreadsheet_id": "1Oxri7kz6UMFpkTENTjoQUHwY5yCuhczJY22c0K5fqbI",
+    "gid": "1951237247",
+    "published_csv_url": "https://docs.google.com/spreadsheets/d/e/2PACX-1vR2Ykj8zO9do27houb1St5VTtPx1gltVf9OBaic3Hp8G13FB9FJ-oYOOYF5dlbV_CdrszMdIiWaMVnd/pub?output=csv",
+    "header_row": 1,
+    "source_headers_verified": false,
+    "note": "source_aliases є кандидатами для зіставлення, а не підтвердженими назвами колонок. Після читання реального CSV потрібно перевірити та зафіксувати фактичні заголовки."
+  },
+  "normalization": {
+    "trim_whitespace": true,
+    "case_insensitive_header_match": true,
+    "collapse_internal_whitespace": true,
+    "normalize_ukrainian_apostrophes": true,
+    "decimal_separator": [",", "."],
+    "empty_values": null,
+    "missing_is_not_zero": true,
+    "percent_values": "Зберігати як відсоткове число (наприклад, 7.6), не як частку 0.076.",
+    "dates": ["YYYY-MM-DD", "DD.MM.YYYY", "DD/MM/YYYY"],
+    "week_number": "ISO-8601, якщо звітний тиждень у джерелі відповідає ISO-тижню; інакше потребує перевірки."
+  },
+  "target_schema": {
+    "year": {
+      "type": "integer",
+      "required": true,
+      "source_aliases": ["Рік", "Звітний рік", "year"],
+      "transform": "Зчитати ціле число або визначити з дати звітного періоду лише за наявності такої дати."
+    },
+    "week": {
+      "type": "integer",
+      "required": true,
+      "source_aliases": ["Тиждень", "Звітний тиждень", "Епідемічний тиждень", "№ тижня", "week"],
+      "transform": "Ціле число 1–53; звірити з датами початку та завершення періоду."
+    },
+    "period_start": {
+      "type": "date",
+      "required": false,
+      "source_aliases": ["Початок періоду", "Дата початку", "З", "Період з", "period_start"],
+      "transform": "Нормалізувати до YYYY-MM-DD."
+    },
+    "period_end": {
+      "type": "date",
+      "required": false,
+      "source_aliases": ["Кінець періоду", "Дата завершення", "По", "Період по", "period_end"],
+      "transform": "Нормалізувати до YYYY-MM-DD."
+    },
+    "report_date": {
+      "type": "date",
+      "required": false,
+      "source_aliases": ["Дата звіту", "Станом на", "Дата оновлення", "report_date"],
+      "transform": "Нормалізувати до YYYY-MM-DD; не підміняти датою завершення тижня без явного правила."
+    },
+    "cases_total": {
+      "type": "integer",
+      "required": true,
+      "source_aliases": ["Захворіло всього", "Усього захворіло", "Всього випадків", "Кількість захворілих", "Грип та ГРВІ всього", "cases_total"],
+      "transform": "Не віднімати COVID-19 або інші групи без підтвердження методики джерела."
+    },
+    "incidence_per_100k": {
+      "type": "number",
+      "required": false,
+      "unit": "випадки на 100 000 населення",
+      "source_aliases": ["Інтенсивний показник", "Захворюваність на 100 тис.", "На 100 тис. населення", "Показник на 100000", "incidence_per_100k"],
+      "transform": "Число з десятковою комою або крапкою."
+    },
+    "epidemic_threshold_difference_pct": {
+      "type": "number",
+      "required": false,
+      "unit": "%",
+      "source_aliases": ["Відхилення від епідпорогу, %", "Нижче/вище епідемічного порогу, %", "Відхилення від епідемічного порогу", "epidemic_threshold_difference_pct"],
+      "transform": "Зберігати знак: від'ємне значення означає нижче порогу, додатне — вище."
+    },
+    "cases_previous_week": {
+      "type": "integer",
+      "required": false,
+      "source_aliases": ["Захворіло минулого тижня", "Попередній тиждень", "Минулого тижня", "cases_previous_week"],
+      "transform": "Кількість випадків за попередній звітний тиждень."
+    },
+    "cases_change_pct": {
+      "type": "number",
+      "required": false,
+      "unit": "%",
+      "source_aliases": ["Зміна до попереднього тижня, %", "Темп приросту, %", "Зростання/зниження, %", "cases_change_pct"],
+      "transform": "Якщо відсутнє, можна обчислити (cases_total - cases_previous_week) / cases_previous_week * 100 лише коли previous > 0; при previous = 0 залишити null."
+    },
+    "cases_children": {
+      "type": "integer",
+      "required": false,
+      "source_aliases": ["Захворіло дітей", "Діти 0–17 років", "Діти", "Випадки серед дітей", "cases_children"],
+      "transform": "Вік визначати лише за методикою джерела; не виводити вікову групу з тексту без перевірки."
+    },
+    "children_share_pct": {
+      "type": "number",
+      "required": false,
+      "unit": "%",
+      "source_aliases": ["Питома вага дітей, %", "Діти, %", "Частка дітей", "children_share_pct"],
+      "transform": "Зберігати відсоток, наведений у джерелі; розрахунок cases_children / cases_total * 100 дозволений як контрольна перевірка."
+    },
+    "children_previous_week": {
+      "type": "integer",
+      "required": false,
+      "source_aliases": ["Діти минулого тижня", "Захворіло дітей попереднього тижня", "children_previous_week"],
+      "transform": "Кількість дитячих випадків за попередній тиждень."
+    },
+    "children_change_pct": {
+      "type": "number",
+      "required": false,
+      "unit": "%",
+      "source_aliases": ["Зміна серед дітей, %", "Приріст дітей, %", "children_change_pct"],
+      "transform": "За відсутності можна обчислити за попереднім тижнем лише якщо його значення більше нуля."
+    },
+    "cases_schoolchildren": {
+      "type": "integer",
+      "required": false,
+      "source_aliases": ["Захворіло школярів", "Школярі", "Випадки серед школярів", "cases_schoolchildren"],
+      "transform": "Зберігати окремо від усіх дитячих випадків."
+    },
+    "schoolchildren_share_pct": {
+      "type": "number",
+      "required": false,
+      "unit": "%",
+      "source_aliases": ["Питома вага школярів, %", "Школярі, %", "schoolchildren_share_pct"],
+      "transform": "Перевірити знаменник; у поточній моделі знаменник — cases_children, а не cases_total."
+    },
+    "schoolchildren_share_denominator": {
+      "type": "string",
+      "required": false,
+      "allowed_values": ["cases_children", "cases_total", "unknown"],
+      "source_aliases": [],
+      "transform": "Встановити за поясненням у звіті або формулою джерела. Не вгадувати."
+    },
+    "schoolchildren_previous_week": {
+      "type": "integer",
+      "required": false,
+      "source_aliases": ["Школярі минулого тижня", "Захворіло школярів попереднього тижня", "schoolchildren_previous_week"],
+      "transform": "Кількість випадків серед школярів за попередній тиждень."
+    },
+    "schoolchildren_change_pct": {
+      "type": "number",
+      "required": false,
+      "unit": "%",
+      "source_aliases": ["Зміна серед школярів, %", "Приріст школярів, %", "schoolchildren_change_pct"],
+      "transform": "За відсутності можна обчислити лише за ненульового значення попереднього тижня."
+    },
+    "hospitalized_total": {
+      "type": "integer",
+      "required": false,
+      "source_aliases": ["Госпіталізовано всього", "Усього госпіталізовано", "Госпіталізації", "hospitalized_total"],
+      "transform": "Кількість госпіталізованих за звітний тиждень."
+    },
+    "hospitalized_children": {
+      "type": "integer",
+      "required": false,
+      "source_aliases": ["Госпіталізовано дітей", "Госпіталізовані діти", "hospitalized_children"],
+      "transform": "Підмножина hospitalized_total; перевірити, що значення не перевищує загальну кількість."
+    },
+    "hospitalized_children_share_pct": {
+      "type": "number",
+      "required": false,
+      "unit": "%",
+      "source_aliases": ["Частка госпіталізованих дітей, %", "Госпіталізовані діти, %", "hospitalized_children_share_pct"],
+      "transform": "Знаменник — hospitalized_total, якщо це підтверджено звітом."
+    },
+    "hospitalized_previous_week": {
+      "type": "integer",
+      "required": false,
+      "source_aliases": ["Госпіталізовано минулого тижня", "Госпіталізації попереднього тижня", "hospitalized_previous_week"],
+      "transform": "Кількість госпіталізованих за попередній тиждень."
+    },
+    "hospitalizations_change_pct": {
+      "type": "number",
+      "required": false,
+      "unit": "%",
+      "source_aliases": ["Зміна госпіталізацій, %", "Зміна до попереднього тижня, госпіталізації", "hospitalizations_change_pct"],
+      "transform": "За відсутності можна обчислити лише за ненульового значення попереднього тижня."
+    },
+    "covid_cases": {
+      "type": "integer",
+      "required": false,
+      "source_aliases": ["Випадки COVID-19", "Захворіло на COVID-19", "COVID-19", "covid_cases"],
+      "transform": "Зберігати саме ту групу населення, до якої належить показник; перевірити covid_cases_population."
+    },
+    "covid_cases_previous_week": {
+      "type": "integer",
+      "required": false,
+      "source_aliases": ["COVID-19 минулого тижня", "Випадки COVID-19 попереднього тижня", "covid_cases_previous_week"],
+      "transform": "Нуль прийнятний лише якщо джерело явно повідомляє 0; порожня клітинка перетворюється на null."
+    },
+    "covid_cases_population": {
+      "type": "string",
+      "required": false,
+      "allowed_values": ["adults", "all_population", "unknown"],
+      "source_aliases": [],
+      "transform": "Визначити за приміткою або заголовком первинного звіту. Не встановлювати adults автоматично."
+    },
+    "deaths_influenza_covid": {
+      "type": "integer",
+      "required": false,
+      "source_aliases": ["Летальні випадки", "Померло від грипу та COVID-19", "Смерті від грипу/COVID-19", "deaths_influenza_covid"],
+      "transform": "Уточнити, чи показник охоплює обидві причини разом; відсутність даних не прирівнювати до нуля."
+    },
+    "pcr_tested": {
+      "type": "integer",
+      "required": false,
+      "source_aliases": ["Обстежено методом ПЛР", "ПЛР обстежено", "Кількість ПЛР-досліджень", "pcr_tested"],
+      "transform": "Визначити одиницю обліку: пацієнти, зразки чи дослідження."
+    },
+    "pcr_positive": {
+      "type": "integer",
+      "required": false,
+      "source_aliases": ["ПЛР позитивні", "Позитивні результати ПЛР", "Виявлено методом ПЛР", "pcr_positive"],
+      "transform": "Не виводити автоматично з текстового підсумку без явного правила."
+    },
+    "pcr_result_summary": {
+      "type": "string",
+      "required": false,
+      "source_aliases": ["Результати ПЛР", "Підсумок лабораторних досліджень", "Висновок ПЛР", "pcr_result_summary"],
+      "transform": "Зберігати текстове формулювання джерела без зміни змісту."
+    },
+    "wastewater_samples_total": {
+      "type": "integer",
+      "required": false,
+      "source_aliases": ["Проби стічних вод всього", "Досліджено проб стічних вод", "Моніторинг стічних вод, проби", "wastewater_samples_total"],
+      "transform": "Кількість проб за звітний тиждень."
+    },
+    "wastewater_sars_cov2_positive": {
+      "type": "integer",
+      "required": false,
+      "source_aliases": ["SARS-CoV-2 позитивні проби", "Позитивні проби на SARS-CoV-2", "wastewater_sars_cov2_positive"],
+      "transform": "Кількість позитивних проб серед досліджених; не змішувати з кількістю вірусних копій."
+    },
+    "wastewater_influenza_ab_positive": {
+      "type": "integer",
+      "required": false,
+      "source_aliases": ["Грип A/B позитивні проби", "Позитивні проби на грип А/В", "wastewater_influenza_ab_positive"],
+      "transform": "Кількість позитивних проб на грип A/B; перевірити, чи джерело подає A і B разом або окремо."
+    }
+  },
+  "quality_checks": [
+    {
+      "id": "period_consistency",
+      "rule": "period_start <= period_end; year/week мають узгоджуватися з датами",
+      "severity": "error"
+    },
+    {
+      "id": "nonnegative_counts",
+      "rule": "Усі лічильники випадків, госпіталізацій, смертей, тестів і проб мають бути цілими невід'ємними числами",
+      "severity": "error"
+    },
+    {
+      "id": "children_not_above_total",
+      "rule": "cases_children <= cases_total, якщо показники мають однакове охоплення",
+      "severity": "warning"
+    },
+    {
+      "id": "schoolchildren_not_above_children",
+      "rule": "cases_schoolchildren <= cases_children, якщо школярі визначені як підгрупа дітей",
+      "severity": "warning"
+    },
+    {
+      "id": "hospitalized_children_not_above_total",
+      "rule": "hospitalized_children <= hospitalized_total",
+      "severity": "warning"
+    },
+    {
+      "id": "positive_pcr_not_above_tested",
+      "rule": "pcr_positive <= pcr_tested, якщо обидва поля мають однакову одиницю обліку",
+      "severity": "warning"
+    },
+    {
+      "id": "positive_wastewater_not_above_samples",
+      "rule": "Кожен показник позитивних проб не має перевищувати wastewater_samples_total, якщо результати рахуються на рівні проб",
+      "severity": "warning"
+    },
+    {
+      "id": "missing_vs_zero",
+      "rule": "Порожні, тире та текстові маркери відсутності даних перетворювати на null; числовий 0 зберігати як нуль",
+      "severity": "error"
+    },
+    {
+      "id": "duplicate_period",
+      "rule": "У нормалізованому наборі має бути не більше одного запису на комбінацію year + week, якщо джерело є зведеним тижневим звітом",
+      "severity": "error"
+    }
+  ],
+  "integration_status": {
+    "dictionary_created": true,
+    "source_headers_verified": false,
+    "automatic_column_mapping_enabled": false,
+    "dashboard_reads_live_source": false,
+    "next_step": "Отримати та перевірити фактичні заголовки CSV, заповнити source_column для кожного target_schema поля, протестувати мапінг і лише потім перемкнути дашборд на нормалізований API."
+  }
+}
