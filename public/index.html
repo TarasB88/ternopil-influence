@@ -174,14 +174,17 @@ function render(p,meta){
   document.getElementById('sourceNote').textContent=meta.source+'. У джерелі доступний один період; історичні графіки не відображаються, доки не буде додано попередні тижні.';
 }
 function normalizeTerritory(value){
-  const raw=String(value||'').trim().replace(/\s+/g,' ');
+  const raw=String(value||'').replace(/^\uFEFF/,'').trim().replace(/\s+/g,' ');
   if(!raw) return 'Тернопільська область';
-  const low=raw.toLocaleLowerCase('uk-UA').replace(/[.]+$/,'').trim();
-  if(['всього','всього (це тернопільська область)','усього','усього (це тернопільська область)','тернопільська область','тернопільська обл','тернопільщина','ternopil oblast','ternopil region'].includes(low)) return 'Тернопільська область';
-  if(['м тернопіль','м. тернопіль','місто тернопіль','тернопіль'].includes(low)) return 'м. Тернопіль';
-  if(['кременецький район','кременецький р-н','кременецький рн'].includes(low)) return 'Кременецький район';
-  if(['чортківський район','чортківський р-н','чортківський рн'].includes(low)) return 'Чортківський район';
-  if(['тернопільський район','тернопільський р-н','тернопільський рн'].includes(low)) return 'Тернопільський район';
+  const low=raw.toLocaleLowerCase('uk-UA').replace(/[.]+$/,'').replace(/[()]/g,' ').replace(/\s+/g,' ').trim();
+  if(/^(?:всього|усього|разом|тернопільська область|тернопільська обл|тернопільщин(?:а|и)|ternopil oblast|ternopil region)(?:\s|$)/i.test(low)) return 'Тернопільська область';
+  if(/^(?:м\.?\s*тернопіль|місто тернопіль|тернопіль\s*м\.?)(?:\s|$)/i.test(low)) return 'м. Тернопіль';
+  if(/^кременецьк(?:ий|ого)\s*(?:район|р-н|рн|р\.)?\b/i.test(low)) return 'Кременецький район';
+  if(/^чортківськ(?:ий|ого)\s*(?:район|р-н|рн|р\.)?\b/i.test(low)) return 'Чортківський район';
+  if(/^тернопільськ(?:ий|ого)\s*(?:район|р-н|рн|р\.)?\b/i.test(low)) return 'Тернопільський район';
+  if(/кременець/.test(low) && /район|р-н|рн|р\./.test(low)) return 'Кременецький район';
+  if(/чортків/.test(low) && /район|р-н|рн|р\./.test(low)) return 'Чортківський район';
+  if(/тернопіль/.test(low) && /район|р-н|рн|р\./.test(low) && !/м\.?\s*тернопіль/.test(low)) return 'Тернопільський район';
   return raw;
 }
 function territoryLabel(value){
@@ -291,7 +294,7 @@ function parseLegacyWeeklyReport(rows){
     const territoryRaw=String(row[ix.territory]||'').trim();
     if(!territoryRaw)continue;
     const territory=normalizeTerritory(territoryRaw);
-    const isTotal=/^(всього|усього)(?:\s*:)?$/i.test(territoryRaw);
+    const isTotal=/^(?:всього|усього|разом)(?:\s*\(.*\))?\s*:?$/i.test(territoryRaw.trim()) || territory==='Тернопільська область';
     if(!isTotal&&!['Кременецький район','Чортківський район','Тернопільський район','м. Тернопіль'].includes(territory))continue;
     const value=i=>parseNumber(row[i]);
     const casesTotal=value(ix.cases_total);
@@ -344,7 +347,10 @@ async function refreshFromSheets(){
       if(obj.week==null&&obj.period_end){const d=new Date(obj.period_end+'T12:00:00Z');const jan4=new Date(Date.UTC(d.getUTCFullYear(),0,4));const day=(d.getUTCDay()+6)%7;const thursday=new Date(d);thursday.setUTCDate(d.getUTCDate()-day+3);const firstThursday=new Date(jan4);firstThursday.setUTCDate(jan4.getUTCDate()-((jan4.getUTCDay()+6)%7)+3);obj.week=1+Math.round((thursday-firstThursday)/(7*86400000));}
       if(obj.year!=null&&obj.week!=null&&obj.cases_total!=null){obj.year=Number(obj.year);obj.week=Number(obj.week);return obj;}return null;
     }).filter(Boolean);
-    if(!mapped.length) mapped.push(...parseLegacyWeeklyReport(rows));
+    // The generic parser can partially map a legacy report (e.g. only one district).
+    // Prefer the legacy table parser whenever it recovers more territory rows.
+    const legacyMapped=parseLegacyWeeklyReport(rows);
+    if(legacyMapped.length>mapped.length) mapped.splice(0,mapped.length,...legacyMapped);
     if(mapped.length){
       const data={periods:mapped.map(p=>({...p,territory:normalizeTerritory(p.territory)})),metadata:{source:'Google Sheets · '+new Date().toLocaleString(currentLanguage==='uk'?'uk-UA':'en-GB')}};
       window.liveSheetData=data;
