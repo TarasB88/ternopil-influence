@@ -22,7 +22,7 @@ const requiredDashboardIds = [
   "mapStatus", "sourceNote"
 ];
 const seenIds = new Set();
-for (const match of html.matchAll(/\\bid=["']([^"']+)["']/g)) {
+for (const match of html.matchAll(/\bid=["']([^"']+)["']/g)) {
   const id = match[1];
   if (seenIds.has(id)) {
     console.error(`FAIL public/index.html: duplicate id "${id}"`);
