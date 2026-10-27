@@ -47,8 +47,6 @@ footer{max-width:1200px;margin:auto;padding:0 20px 28px;color:#6b7e8d;font-size:
     <button class="action primary" id="refreshButton" type="button" data-i18n="refresh">Оновити з Google Sheets</button>
     <button class="action secondary" id="languageButton" type="button" aria-label="Switch dashboard language">EN</button>
     <button class="action secondary" id="modeButton" type="button" aria-pressed="false">Для фахівців</button>
-    <button class="action secondary" id="publicPdfButton" type="button">PDF інфографіки</button>
-    <button class="action secondary" id="publicPngButton" type="button">PNG інфографіки</button>
     <div class="period" id="periodLabel" aria-live="polite"></div>
     <div class="status" id="refreshStatus" role="status" aria-live="polite"></div>
   </section>
@@ -524,19 +522,6 @@ document.getElementById('modeButton')?.addEventListener('click',()=>{
   if(expert)renderExpertTable();
 });
 document.getElementById('exportCsv')?.addEventListener('click',exportTableCsv);
-document.getElementById('publicPdfButton')?.addEventListener('click',()=>window.print());
-document.getElementById('publicPngButton')?.addEventListener('click',async()=>{
-  if(!window.html2canvas){alert('Не завантажилась бібліотека експорту PNG.');return;}
-  const target=document.querySelector('.container');const button=document.getElementById('publicPngButton');button.disabled=true;
-  try{const canvas=await window.html2canvas(target,{scale:2,backgroundColor:'#f3f6f9',useCORS:true,ignoreElements:el=>el.id==='hromadaMap'});const a=document.createElement('a');a.download='ternopil-influence-week-'+(window.lastRenderedPeriod?.week??'report')+'.png';a.href=canvas.toDataURL('image/png');a.click();}
-  catch(e){alert('Не вдалося сформувати PNG. Скористайтеся PDF.');console.error(e);}
-  finally{button.disabled=false;}
-});
-document.getElementById('exportXlsx')?.addEventListener('click',()=>{
-  if(!window.XLSX){alert('Бібліотека XLSX не завантажилась. Скористайтеся CSV.');return;}
-  const rows=[['Рік','Тиждень','Територія','Випадки','Діти','Школярі','Госпіталізовано','Інтенсивний показник','Поріг низької інтенсивності','Вакциновано'],...getAllDashboardPeriods().map(p=>[p.year,p.week,p.territory,p.cases_total,p.cases_children,p.cases_schoolchildren,p.hospitalized_total,p.incidence_per_100k,p.intensity_low_threshold??p.threshold_low??null,p.vaccinated_total??p.vaccination_total??null])];
-  const ws=window.XLSX.utils.aoa_to_sheet(rows),wb=window.XLSX.utils.book_new();window.XLSX.utils.book_append_sheet(wb,ws,'Дані');window.XLSX.writeFile(wb,'ternopil-influence-data.xlsx');
-});
 document.getElementById('exportPdf')?.addEventListener('click',()=>window.print());
 
 init().catch(error=>{document.getElementById('summary').innerHTML='<p>Не вдалося завантажити дані. Перевірте файл public/data/weekly.json.</p>';console.error(error)});
