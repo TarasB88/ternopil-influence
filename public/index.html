@@ -375,10 +375,10 @@ const headerAliases = {
   risk_group:['risk_group','Група ризику','Цільова група','Категорія ризику'],
   vaccinated_count:['vaccinated_count','Кількість щеплень','Кількість вакцинованих','Щеплено осіб'],
 
-  cases_total:['Захворіло всього','Усього захворіло','Всього захворіло','Всього випадків','Кількість захворілих','Грип та ГРВІ всього','Захворіло на грип та ГРВІ','Захворіло на ГРВІ','cases_total'],
-  territory:['Територія','Територіальна одиниця','Область','Регіон','Територія звіту','Назва території','Адміністративно-територіальна одиниця','territory','region','oblast'], year:['Рік','Звітний рік','year'], week:['Тиждень','Звітний тиждень','Епідемічний тиждень','№ тижня','Номер тижня','week'],
-  period_start:['Початок періоду','Дата початку','Період з','period_start'], period_end:['Кінець періоду','Дата завершення','Період по','period_end'],
-  report_date:['Дата звіту','Станом на','Дата оновлення','report_date'], incidence_per_100k:['Інтенсивний показник','Захворюваність на 100 тис.','На 100 тис. населення','incidence_per_100k'],
+  cases_total:['Захворіло всього','Усього захворіло','Всього захворіло','Всього випадків','Кількість захворілих','Грип та ГРВІ всього','Захворіло на грип та ГРВІ','Всього захворіло на грип та ГРВІ','Усього захворіло на грип та ГРВІ','Захворіло на ГРВІ','cases_total'],
+  territory:['Територія','Територіальна одиниця','Область','Регіон','Територія звіту','Назва території','Адміністративна територія','Адмінтериторія','Адміністративно-територіальна одиниця','Адміністративно-територіальна одиниця (район/місто)','territory','region','oblast'], year:['Рік','Звітний рік','year'], week:['Тиждень','Звітний тиждень','Епідемічний тиждень','№ тижня','Номер тижня','week'],
+  period_start:['Початок періоду','Дата початку','З','Період з','period_start'], period_end:['Кінець періоду','Дата завершення','По','Період по','period_end'],
+  report_date:['Дата звіту','Станом на','Дата оновлення','report_date'], incidence_per_100k:['Інтенсивний показник','Інт. показник','Захворюваність на 100 тис.','На 100 тис. населення','Показник на 100000','На 100000 населення','incidence_per_100k'],
   epidemic_threshold_difference_pct:['Відхилення від епідпорогу, %','Відхилення від епідемічного порогу','epidemic_threshold_difference_pct'],
   cases_previous_week:['Захворіло минулого тижня','Попередній тиждень','cases_previous_week'], cases_change_pct:['Зміна до попереднього тижня, %','Темп приросту, %','cases_change_pct'],
   cases_children:['Захворіло дітей','Діти 0–17 років','Діти','Випадки серед дітей','cases_children'], children_share_pct:['Питома вага дітей, %','Частка дітей','children_share_pct'],
@@ -392,7 +392,7 @@ const headerAliases = {
   pcr_tested:['Обстежено методом ПЛР','ПЛР обстежено','Кількість ПЛР-досліджень','Обстежено ПЛР','pcr_tested'], pcr_positive:['ПЛР позитивні','Позитивні результати ПЛР','Виявлено методом ПЛР','pcr_positive'], pcr_result_summary:['Результати ПЛР','Підсумок лабораторних досліджень','Висновок ПЛР','pcr_result_summary'],
   wastewater_samples_total:['Проби стічних вод всього','Досліджено проб стічних вод','wastewater_samples_total'], wastewater_sars_cov2_positive:['SARS-CoV-2 позитивні проби','Позитивні проби на SARS-CoV-2','wastewater_sars_cov2_positive'], wastewater_influenza_ab_positive:['Грип A/B позитивні проби','Позитивні проби на грип А/В','wastewater_influenza_ab_positive']
 };
-function normalizeHeader(s){return String(s||'').replace(/^\uFEFF/,'').trim().toLocaleLowerCase('uk-UA').replace(/[’‘ʼ]/g,"'").replace(/\s+/g,' ');}
+function normalizeHeader(s){return String(s||'').replace(/^\uFEFF/,'').trim().toLocaleLowerCase('uk-UA').replace(/[’‘ʼ`´]/g,"'").replace(/[–—−]/g,'-').replace(/[№]/g,' номер ').replace(/[.,;:()]/g,' ').replace(/[%]/g,' % ').replace(/\s+/g,' ').trim();}
 function parseNumber(v){if(v==null||String(v).trim()===''||['—','-','н/д','немає даних'].includes(String(v).trim().toLocaleLowerCase('uk-UA')))return null;const n=Number(String(v).replace(/\s/g,'').replace(',','.').replace('%',''));return Number.isFinite(n)?n:null;}
 function parseDate(v){if(!v)return null;const s=String(v).trim();let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');m=s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{2,4})$/);if(!m)return null;let y=m[3];if(y.length===2)y='20'+y;return y+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');}
 function parseLegacyWeeklyReport(rows){
@@ -473,9 +473,26 @@ async function refreshFromSheets(){
     const csv=await response.text(), rows=parseCSV(csv);
     if(rows.length<2)throw new Error('empty CSV');
     const headers=rows[0].map(normalizeHeader), columns={};
+    // Match exact normalized aliases first, then conservative field-specific patterns.
+    // Avoid broad "діти" matching for schoolchildren/hospitalized children.
+    const headerPatterns={
+      territory:[/^(?:адмінтериторія|адміністративна територія|адміністративно територіальна одиниця|адміністративно територіальна одиниця район місто|територія|територіальна одиниця|область|регіон|назва території|territory|region|oblast)$/],
+      cases_total:[/^(?:всього|усього)? ?(?:захворіло|випадків)(?: на грип та грві| на грві)?(?: всього)?$/, /^(?:грип та грві) всього$/],
+      cases_children:[/^(?:захворіло дітей|діти 0 ?-? ?17 років|випадки серед дітей|діти)$/],
+      cases_schoolchildren:[/школяр/],
+      hospitalized_total:[/^(?:госпіталізовано всього|усього госпіталізовано|госпіталізації)$/],
+      hospitalized_children:[/госпіталізован(?:о|і).*діт/],
+      period_start:[/^(?:початок періоду|дата початку|з|період з|period start)$/],
+      period_end:[/^(?:кінець періоду|дата завершення|по|період по|period end)$/],
+      year:[/^(?:рік|звітний рік|year)$/],
+      week:[/^(?:тиждень|звітний тиждень|епідемічний тиждень|номер тижня|week)$/],
+      incidence_per_100k:[/інтенсивний показник/,/показник на 100000/,/на 100000 населення/]
+    };
     for(const [field,aliases] of Object.entries(headerAliases)){
       const normalized=aliases.map(normalizeHeader);
-      columns[field]=headers.findIndex(h=>normalized.includes(h));
+      let index=headers.findIndex(h=>normalized.includes(h));
+      if(index<0 && headerPatterns[field]) index=headers.findIndex(h=>headerPatterns[field].some(re=>re.test(h)));
+      columns[field]=index;
     }
     const mapped=rows.slice(1).map(row=>{
       const obj={};for(const [field,index] of Object.entries(columns)){if(index>=0)obj[field]=['pcr_result_summary','schoolchildren_share_denominator','covid_cases_population','record_type','vaccination_brand','risk_group'].includes(field)?((row[index]||'').trim()||null):field==='territory'?(String(row[index]||'').trim()?normalizeTerritory(row[index]):null):parseNumber(row[index]);} if(obj.territory==null) return null;
