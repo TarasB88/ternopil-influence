@@ -22,7 +22,7 @@ if (!inlineScripts.length) {
     try {
       new Script(match[1], { filename: `public/index.html inline script #${i + 1}` });
     } catch (error) {
-      console.error(`FAIL public/index.html inline script #${i + 1}: ${error.message}`);
+      console.error(`FAIL public/index.html inline script #${i + 1}: ${error.stack || error.message}`);
       process.exitCode = 1;
     }
   }
