@@ -46,7 +46,9 @@ footer{max-width:1200px;margin:auto;padding:0 20px 28px;color:#6b7e8d;font-size:
     <div><label for="periodSelect" data-i18n="period">Звітний період</label><select id="periodSelect"></select></div>
     <button class="action primary" id="refreshButton" type="button" data-i18n="refresh">Оновити з Google Sheets</button>
     <button class="action secondary" id="languageButton" type="button" aria-label="Switch dashboard language">EN</button>
-    <button class="action secondary" id="modeButton" type="button" aria-pressed="false">Для фахівців</button>\n    <button class="action secondary" id="publicPdfButton" type="button">PDF інфографіки</button>\n    <button class="action secondary" id="publicPngButton" type="button">PNG інфографіки</button>
+    <button class="action secondary" id="modeButton" type="button" aria-pressed="false">Для фахівців</button>
+    <button class="action secondary" id="publicPdfButton" type="button">PDF інфографіки</button>
+    <button class="action secondary" id="publicPngButton" type="button">PNG інфографіки</button>
     <div class="period" id="periodLabel" aria-live="polite"></div>
     <div class="status" id="refreshStatus" role="status" aria-live="polite"></div>
   </section>
@@ -81,7 +83,9 @@ footer{max-width:1200px;margin:auto;padding:0 20px 28px;color:#6b7e8d;font-size:
   <section class="card"><h2 data-i18n="sourceTitle">Джерело та примітки</h2><p class="note" id="sourceNote"></p></section>
 </main>
 <footer data-i18n="footer">Інформаційний інструмент епідеміологічного моніторингу. Перед офіційним використанням перевірте значення за первинним звітом.</footer>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>\n<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 let currentLanguage = 'uk';
 const i18n = {
