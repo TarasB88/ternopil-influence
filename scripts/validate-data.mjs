@@ -13,7 +13,7 @@ function readJson(path) {
 
 
 const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
-const inlineScripts = [...html.matchAll(/<script\\b(?![^>]*\\bsrc=)[^>]*>([\\s\\S]*?)<\\/script>/gi)];
+const inlineScripts = [...html.matchAll(/<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)];
 if (!inlineScripts.length) {
   console.error("FAIL public/index.html: no inline JavaScript found to syntax-check");
   process.exitCode = 1;
