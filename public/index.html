@@ -467,7 +467,7 @@ async function refreshFromSheets(){
   const button=document.getElementById('refreshButton'), status=document.getElementById('refreshStatus');
   button.disabled=true; status.textContent=i18n[currentLanguage].loading;
   try{
-    const response=await fetch('/api/source?refresh='+Date.now(),{cache:'no-store'});
+    const response=await fetch('/api/respiratory?refresh='+Date.now(),{cache:'no-store'});
     if(!response.ok)throw new Error('HTTP '+response.status);
     const csv=await response.text(), rows=parseCSV(csv);
     if(rows.length<2)throw new Error('empty CSV');
