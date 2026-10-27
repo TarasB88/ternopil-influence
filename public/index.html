@@ -176,15 +176,13 @@ function render(p,meta){
 function normalizeTerritory(value){
   const raw=String(value||'').replace(/^\uFEFF/,'').trim().replace(/\s+/g,' ');
   if(!raw) return 'Тернопільська область';
-  const low=raw.toLocaleLowerCase('uk-UA').replace(/[.]+$/,'').replace(/[()]/g,' ').replace(/\s+/g,' ').trim();
+  const low=raw.toLocaleLowerCase('uk-UA').replace(/[()]/g,' ').replace(/[.,;:]/g,' ').replace(/-/g,' ').replace(/\s+/g,' ').trim();
   if(/^(?:всього|усього|разом|тернопільська область|тернопільська обл|тернопільщин(?:а|и)|ternopil oblast|ternopil region)(?:\s|$)/i.test(low)) return 'Тернопільська область';
-  if(/^(?:м\.?\s*тернопіль|місто тернопіль|тернопіль\s*м\.?)(?:\s|$)/i.test(low)) return 'м. Тернопіль';
-  if(/^кременецьк(?:ий|ого)\s*(?:район|р-н|рн|р\.)?\b/i.test(low)) return 'Кременецький район';
-  if(/^чортківськ(?:ий|ого)\s*(?:район|р-н|рн|р\.)?\b/i.test(low)) return 'Чортківський район';
-  if(/^тернопільськ(?:ий|ого)\s*(?:район|р-н|рн|р\.)?\b/i.test(low)) return 'Тернопільський район';
-  if(/кременець/.test(low) && /район|р-н|рн|р\./.test(low)) return 'Кременецький район';
-  if(/чортків/.test(low) && /район|р-н|рн|р\./.test(low)) return 'Чортківський район';
-  if(/тернопіль/.test(low) && /район|р-н|рн|р\./.test(low) && !/м\.?\s*тернопіль/.test(low)) return 'Тернопільський район';
+  if(/^(?:м тернопіль|місто тернопіль|тернопіль м|тернопіль)$/.test(low)) return 'м. Тернопіль';
+  // JavaScript \b does not treat Cyrillic letters as word characters; use explicit normalized labels.
+  if(/^кременецький(?: район| р н| рн)?$/.test(low) || /^кременецького району$/.test(low) || (/кременець/.test(low) && /район|р н|рн/.test(low))) return 'Кременецький район';
+  if(/^чортківський(?: район| р н| рн)?$/.test(low) || /^чортківського району$/.test(low) || (/чортків/.test(low) && /район|р н|рн/.test(low))) return 'Чортківський район';
+  if(/^тернопільський(?: район| р н|рн)?$/.test(low) || /^тернопільського району$/.test(low) || (/тернопіль/.test(low) && /район|р н|рн/.test(low) && !/^м тернопіль$/.test(low))) return 'Тернопільський район';
   return raw;
 }
 function territoryLabel(value){
