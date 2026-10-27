@@ -58,7 +58,7 @@ const fmt = n => n == null ? "Немає даних" : new Intl.NumberFormat("uk
 const pct = n => n == null ? "Немає даних" : (n > 0 ? "+" : "") + fmt(n) + "%";
 const date = s => s ? new Date(s+"T12:00:00").toLocaleDateString("uk-UA",{day:"2-digit",month:"long",year:"numeric"}) : "—";
 const dateShort = s => s ? new Date(s+"T12:00:00").toLocaleDateString("uk-UA",{day:"2-digit",month:"2-digit",year:"numeric"}) : "—";
-const dateDayMonth = s => s ? new Date(s+"T12:00:00").toLocaleDateString("uk-UA",{day:"2-digit",month:"2-digit"}) : "—";
+const dateDayMonth = s => s ? s.slice(8,10)+"."+s.slice(5,7)+"." : "—";
 const safe = (v, suffix="") => v == null ? "Немає даних" : fmt(v)+suffix;
 function kpi(label,value,note){return '<article class="kpi"><div class="label">'+label+'</div><div class="value">'+value+'</div><div class="note">'+note+'</div></article>'}
 function bar(label,value,max,detail){const width=max>0?Math.max(0,Math.min(100,value/max*100)):0;return '<div class="bar-row"><div class="bar-head"><span>'+label+'</span><strong>'+detail+'</strong></div><div class="track"><div class="bar" style="width:'+width+'%"></div></div></div>'}
