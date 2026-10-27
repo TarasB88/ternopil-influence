@@ -31,6 +31,32 @@ footer{max-width:1200px;margin:auto;padding:0 20px 28px;color:#6b7e8d;font-size:
 
 @media(max-width:420px){.grid{grid-template-columns:1fr 1fr;gap:8px}.kpi{padding:12px}.container{padding:12px}.toolbar{padding:12px}select{width:100%}}
 #hromadaMap{height:520px;min-height:360px;border-radius:10px;overflow:hidden;background:#edf2f5}.map-legend{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 0;font-size:.84rem;color:#5f7484}.map-swatch{display:inline-block;width:12px;height:12px;border:1px solid #7392a3;border-radius:3px;margin-right:5px;vertical-align:-1px}.map-status{margin:0 0 10px}
+
+/* Visual refresh inspired by Influance; retain every existing module. */
+:root{font-family:"IBM Plex Sans",Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#203747;background:#f2f6f8}
+body{background:#f2f6f8;color:#203747}
+header{background:#173f55;padding-top:30px;padding-bottom:28px;border-bottom:4px solid #4a9a9b}
+header .eyebrow{letter-spacing:.18em;font-weight:700}
+h1,h2,h3{letter-spacing:.025em}
+h2{font-size:1rem!important;font-weight:750!important;text-transform:uppercase;color:#17465e;letter-spacing:.055em!important}
+.container{max-width:1280px;padding:24px}
+.toolbar{position:sticky;top:0;z-index:30;border:1px solid #d8e4e9;border-radius:0 0 16px 16px;box-shadow:0 8px 22px #173d550c;backdrop-filter:blur(12px);background:#ffffffed;margin-bottom:22px}
+.card,.kpi{border-color:#dbe6eb;border-radius:16px;box-shadow:0 4px 16px #173d5509}
+.card{padding:22px}.kpi{padding:20px;border-top:3px solid #4a9a9b}.kpi .value{color:#173f55}
+.action{transition:transform .15s ease,box-shadow .15s ease}.action:hover{transform:translateY(-1px);box-shadow:0 5px 12px #173d551c}
+.primary{background:#176c83}.secondary{background:#e7f0f3;color:#214e62}
+select{border-color:#c9d9e1;border-radius:9px}
+.status-chip{border-radius:12px}.prevention-item{background:#f5f9fa;border-color:#e0ebef;border-radius:14px}
+#hromadaMap{overflow:hidden;border-radius:12px;border:1px solid #d8e4e9}
+footer{max-width:1280px;padding:0 24px 30px}
+.analytics-row{margin-bottom:18px}.chart-scroll,.table-scroll{overflow-x:auto}
+.trend-labels{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:#617887;font-size:.78rem;margin-top:4px}
+.intensity-number{font-size:1.65rem;font-weight:800;color:#173f55;margin:6px 0}.intensity-number span{font-size:.8rem;font-weight:500;color:#607587}
+.threshold-track{height:13px;border-radius:99px;background:#e8eff2;position:relative;margin:24px 0 8px}.threshold-fill{height:100%;border-radius:99px;background:#4a9a9b}.threshold-track i{position:absolute;top:-5px;height:23px;width:2px;background:#173f55}
+.threshold-labels{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.78rem;color:#617887}
+.history-table{width:100%;border-collapse:collapse;white-space:nowrap;font-size:.82rem}.history-table th{position:sticky;top:0;background:#e9f1f4;color:#214e62;text-align:left;font-weight:750}.history-table th,.history-table td{padding:10px 12px;border-bottom:1px solid #e0e9ed}.history-table tbody tr:nth-child(even){background:#f7fafb}.history-table tbody tr:hover{background:#edf6f7}
+@media(max-width:700px){.container{padding:14px}.card{padding:16px}.toolbar{border-radius:0 0 12px 12px}.grid{gap:10px}.kpi{padding:14px}}
+
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
@@ -68,6 +94,12 @@ footer{max-width:1200px;margin:auto;padding:0 20px 28px;color:#6b7e8d;font-size:
     <div class="summary" id="summary" aria-live="polite"></div>
   </section>
   <section class="grid" id="kpis" aria-label="Ключові показники" data-i18n-aria="kpis"></section>
+  <section class="two analytics-row" aria-label="Аналітичні модулі">
+    <article class="card"><h2>Динаміка за тижнями</h2><p class="note">Історичні значення лише за наявними звітними періодами.</p><div id="weeklyTrend"></div></article>
+    <article class="card"><h2>Інтенсивність на 100 тис. населення</h2><p class="note">Порівняння з порогом низької інтенсивності, якщо він є в джерелі.</p><div id="intensityPanel"></div></article>
+  </section>
+  <section class="card"><h2>Порівняння територій за звітний тиждень</h2><p class="note">Підсумок області не додається до районів.</p><div id="territoryComparison"></div></section>
+  <section class="card"><h2>Історія звітних періодів</h2><p class="note">Останні доступні записи для вибраної території. Відсутні значення позначено тире, а не нулем.</p><div id="periodHistory"></div></section>
   <section class="two">
     <article class="card"><h2 data-i18n="structureTitle">Структура випадків</h2><div id="structure"></div></article>
     <article class="card"><h2 data-i18n="hospitalTitle">Госпіталізації</h2><div id="hospital"></div></article>
@@ -156,7 +188,7 @@ function updateNewPanels(p){
   }
 }
 function render(p,meta){
-  window.lastRenderedPeriod=p; window.lastRenderedMeta=meta; updateNewPanels(p);
+  window.lastRenderedPeriod=p; window.lastRenderedMeta=meta; updateNewPanels(p); renderAnalyticsModules(p);
   document.getElementById('periodLabel').textContent=i18n[currentLanguage].reportAsOf+dateShort(p.report_date);
   if(currentLanguage==='en'){
     const n=v=>v==null?'No data':fmt(v), pp=v=>v==null?'No data':(v>0?'+':'')+fmt(v)+'%';
@@ -233,6 +265,39 @@ function render(p,meta){
     '<p>Проби стічних вод: <strong>'+fmt(p.wastewater_samples_total)+'</strong>; SARS-CoV-2 позитивні: '+fmt(p.wastewater_sars_cov2_positive)+'; грип A/B позитивні: '+fmt(p.wastewater_influenza_ab_positive)+'.</p>';
   document.getElementById('sourceNote').textContent=meta.source+'. У джерелі доступний один період; історичні графіки не відображаються, доки не буде додано попередні тижні.';
 }
+function renderAnalyticsModules(selected){
+  const all=(window.liveSheetData||window.initialDashboardData||{periods:[]}).periods||[];
+  const territory=document.getElementById('territorySelect')?.value||selected.territory||'Тернопільська область';
+  const rows=all.filter(p=>normalizeTerritory(p.territory)===normalizeTerritory(territory)).sort((a,b)=>String(a.period_end||'').localeCompare(String(b.period_end||''))||Number(a.week)-Number(b.week));
+  const recent=rows.slice(-12), valid=recent.filter(p=>typeof p.cases_total==='number'&&Number.isFinite(p.cases_total));
+  const n=v=>typeof v==='number'&&Number.isFinite(v)?fmt(v):'—';
+  const trend=document.getElementById('weeklyTrend');
+  if(trend){
+    if(valid.length<2)trend.innerHTML='<p class="empty">Потрібно щонайменше два звітні періоди для побудови тренду.</p>';
+    else{
+      const vals=recent.map(p=>p.cases_total),finite=vals.filter(v=>typeof v==='number'&&Number.isFinite(v)),max=Math.max(1,...finite),w=620,h=190,pad=24;
+      const pts=vals.map((v,i)=>typeof v==='number'&&Number.isFinite(v)?{x:pad+i*(w-2*pad)/Math.max(1,vals.length-1),y:h-pad-v/max*(h-2*pad),v}:null).filter(Boolean);
+      trend.innerHTML='<div class="chart-scroll"><svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="Динаміка кількості випадків" style="width:100%;min-width:300px;height:auto"><line x1="'+pad+'" y1="'+(h-pad)+'" x2="'+(w-pad)+'" y2="'+(h-pad)+'" stroke="#d8e4e9"/><polyline points="'+pts.map(p=>p.x+','+p.y).join(' ')+'" fill="none" stroke="#247e91" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>'+pts.map(p=>'<circle cx="'+p.x+'" cy="'+p.y+'" r="4" fill="#247e91"><title>'+n(p.v)+' випадків</title></circle>').join('')+'</svg></div><div class="trend-labels"><span>'+recent[0].year+' · тиж. '+recent[0].week+'</span><strong>Останнє значення: '+n(vals[vals.length-1])+'</strong><span>'+recent[recent.length-1].year+' · тиж. '+recent[recent.length-1].week+'</span></div>';
+    }
+  }
+  const intensity=document.getElementById('intensityPanel');
+  if(intensity){
+    const v=selected.incidence_per_100k,low=selected.intensity_low_threshold??selected.threshold_low,mid=selected.intensity_medium_threshold??selected.threshold_medium,high=selected.intensity_high_threshold??selected.threshold_high,max=Math.max(v||0,low||0,mid||0,high||0,1)*1.15;
+    const label=v==null?'Немає даних':low!=null&&v<low?'Нижче низького порогу':mid!=null&&v>=mid?'Середній або вищий рівень':low!=null&&v>=low?'Низький рівень':'Пороги не визначені';
+    intensity.innerHTML='<div class="intensity-number">'+n(v)+' <span>випадків на 100 тис.</span></div><span class="pill">'+label+'</span><div class="threshold-track"><div class="threshold-fill" style="width:'+Math.min(100,(v||0)/max*100)+'%"></div>'+[[low,'Низький'],[mid,'Середній'],[high,'Високий']].filter(x=>x[0]!=null).map(x=>'<i title="'+x[1]+': '+n(x[0])+'" style="left:'+Math.min(100,x[0]/max*100)+'%"></i>').join('')+'</div><div class="threshold-labels"><span>0</span><span>Поріг низької інтенсивності: '+n(low)+'</span></div>';
+  }
+  const comp=document.getElementById('territoryComparison');
+  if(comp){
+    const matches=all.filter(p=>Number(p.year)===Number(selected.year)&&Number(p.week)===Number(selected.week)&&normalizeTerritory(p.territory)!=='Тернопільська область'&&typeof p.cases_total==='number'&&Number.isFinite(p.cases_total)).sort((a,b)=>b.cases_total-a.cases_total).slice(0,12),max=Math.max(1,...matches.map(p=>p.cases_total));
+    comp.innerHTML=matches.length?matches.map(p=>'<div class="bar-row"><div class="bar-head"><span>'+escapeHtml(territoryLabel(normalizeTerritory(p.territory)))+'</span><strong>'+n(p.cases_total)+'</strong></div><div class="track"><div class="bar" style="width:'+p.cases_total/max*100+'%"></div></div></div>').join(''):'<p class="empty">У цьому періоді немає окремих територіальних записів для порівняння.</p>';
+  }
+  const history=document.getElementById('periodHistory');
+  if(history){
+    const hist=[...rows].sort((a,b)=>String(b.period_end||'').localeCompare(String(a.period_end||''))||Number(b.week)-Number(a.week)).slice(0,12);
+    history.innerHTML=hist.length?'<div class="table-scroll"><table class="history-table"><thead><tr><th>Рік / тиждень</th><th>Випадки</th><th>На 100 тис.</th><th>Діти</th><th>Госпіталізовано</th><th>COVID-19</th><th>Щеплено</th></tr></thead><tbody>'+hist.map(p=>'<tr><td>'+p.year+' / '+p.week+'</td><td>'+n(p.cases_total)+'</td><td>'+n(p.incidence_per_100k)+'</td><td>'+n(p.cases_children)+'</td><td>'+n(p.hospitalized_total)+'</td><td>'+n(p.covid_cases)+'</td><td>'+n(p.vaccinated_total??p.vaccination_total??p.vaccinated)+'</td></tr>').join('')+'</tbody></table></div>':'<p class="empty">Немає історичних записів для вибраної території.</p>';
+  }
+}
+function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
 function normalizeTerritory(value){
   const raw=String(value||'').replace(/^\uFEFF/,'').trim().replace(/\s+/g,' ');
   if(!raw) return 'Тернопільська область';
