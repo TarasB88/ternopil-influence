@@ -426,7 +426,7 @@ function normalizeTerritory(value){
   if(!raw) return 'Тернопільська область';
   const low=raw.toLocaleLowerCase('uk-UA').replace(/[()]/g,' ').replace(/[.,;:]/g,' ').replace(/-/g,' ').replace(/\s+/g,' ').trim();
   if(/^(?:всього|усього|разом|тернопільська область|тернопільська обл|тернопільщин(?:а|и)|ternopil oblast|ternopil region)(?:\s|$)/i.test(low)) return 'Тернопільська область';
-  if(/^(?:м тернопіль|місто тернопіль|тернопіль м|тернопіль)$/.test(low)) return 'м. Тернопіль';
+  if(/^(?:м тернопіль|місто тернопіль|тернопіль м|тернопіль|тернопільське місто|тернопільська міська територіальна громада|тернопільська міська громада|тернопільська мтг|м тернопільська)$/.test(low) || (/тернопіль/.test(low) && /міськ|місто|мтг/.test(low) && !/район|р н|рн/.test(low))) return 'м. Тернопіль';
   // JavaScript \b does not treat Cyrillic letters as word characters; use explicit normalized labels.
   if(/^кременецький(?: район| р н| рн)?$/.test(low) || /^кременецького району$/.test(low) || (/кременець/.test(low) && /район|р н|рн/.test(low))) return 'Кременецький район';
   if(/^чортківський(?: район| р н| рн)?$/.test(low) || /^чортківського району$/.test(low) || (/чортків/.test(low) && /район|р н|рн/.test(low))) return 'Чортківський район';
