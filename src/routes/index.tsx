@@ -727,6 +727,7 @@ function CasesTrend({ rows, weeks, territory }: { rows: Row[]; weeks: string[]; 
       name: `тиж. ${w.split("-")[1]} / ${w.split("-")[0]}`,
       "Усього випадків": num(r?.cases_total),
       "Діти до 18 років": num(r?.cases_children_under_18),
+      "Школярі": num(r?.cases_schoolchildren),
     };
   });
   return (
@@ -739,6 +740,7 @@ function CasesTrend({ rows, weeks, territory }: { rows: Row[]; weeks: string[]; 
         <Legend />
         <Line type="monotone" dataKey="Усього випадків" stroke="var(--chart-1)" strokeWidth={2.5} connectNulls={false} dot={{ r: 3 }} />
         <Line type="monotone" dataKey="Діти до 18 років" stroke="var(--chart-2)" strokeWidth={2} connectNulls={false} dot={{ r: 3 }} />
+        <Line type="monotone" dataKey="Школярі" stroke="var(--chart-3)" strokeWidth={2} connectNulls={false} dot={{ r: 3 }} />
       </LineChart>
     </ResponsiveContainer>
   );
