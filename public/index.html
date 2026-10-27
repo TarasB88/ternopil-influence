@@ -129,6 +129,18 @@ button:focus-visible,select:focus-visible,a:focus-visible,[tabindex]:focus-visib
 @media(max-width:360px){.grid{grid-template-columns:1fr 1fr}.kpi .value{font-size:1.22rem}.action{padding:9px 10px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}}
 
+
+/* Territory-level cases panel */
+.territory-cases-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.territory-case-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border:1px solid #e1e9ef;border-radius:11px;background:#fbfdfe}
+.territory-case-name{font-weight:700;color:#244d69;min-width:0;overflow-wrap:anywhere}
+.territory-case-value{font-size:1.15rem;font-weight:800;color:#173f55;white-space:nowrap}
+.territory-case-meta{font-size:.78rem;color:#6a7d8e;margin-top:2px}
+.territory-case-item[aria-current="true"]{border-color:#2c9b91;background:#eaf7f5;box-shadow:inset 3px 0 #2c9b91}
+.territory-case-empty{padding:14px;border-radius:10px;background:#f7fafc;color:#65798a}
+@media(max-width:800px){.territory-cases-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.territory-cases-grid{grid-template-columns:1fr}}
+
 </style>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
@@ -176,11 +188,15 @@ button:focus-visible,select:focus-visible,a:focus-visible,[tabindex]:focus-visib
     <article class="card"><h2 data-i18n="structureTitle">Структура випадків</h2><div id="structure"></div></article>
     <article class="card"><h2 data-i18n="hospitalTitle">Госпіталізації</h2><div id="hospital"></div></article>
   </section>
-  <section class="two">
-    <article class="card"><h2 data-i18n="covidTitle">COVID-19 та летальні випадки</h2><div id="covid"></div></article>
+  <section class="two">    <article class="card"><h2 data-i18n="covidTitle">COVID-19 та летальні випадки</h2><div id="covid"></div></article>
     <article class="card"><h2 data-i18n="labTitle">Лабораторний нагляд</h2><div id="lab"></div></article>
   </section>
   <section class="card map-card" aria-labelledby="mapTitle"><div class="map-heading"><div><h2 id="mapTitle" data-i18n="mapTitle">Територіальна карта громад</h2><p class="note map-status" id="mapStatus">Карта показує межі 55 територіальних громад. Дані поточного звіту агреговані за районами, тому показники на рівні громад не розраховуються.</p></div><button class="action secondary map-reset" id="mapResetButton" type="button" data-i18n="mapReset">Уся область</button></div><div class="map-shell"><div id="hromadaMap" role="img" aria-label="Інтерактивна карта територіальних громад Тернопільської області"></div><div class="map-overlay-legend"><span class="legend-title" data-i18n="mapLegendTitle">Межі громад</span><span><i class="map-swatch" style="background:#dbe9f2"></i><span data-i18n="mapLegendOutside">Інші громади</span></span><span><i class="map-swatch" style="background:#2c9b91"></i><span data-i18n="mapLegendSelected">Вибрана територія</span></span></div></div></section>
+  <section class="card" id="territoryCasesCard" aria-labelledby="territoryCasesTitle">
+    <h2 id="territoryCasesTitle">Звернення за територіями</h2>
+    <p class="note" id="territoryCasesNote">Показники сформовано за вибраний звітний тиждень із доступних територіальних рядків джерела. Загальний підсумок області не додається до територій.</p>
+    <div id="territoryCases" aria-live="polite"><div class="territory-case-empty">Завантаження територіальних показників…</div></div>
+  </section>
   <section class="card"><h2 data-i18n="sourceTitle">Джерело та примітки</h2><p class="note" id="sourceNote"></p></section>
 </main>
 <footer data-i18n="footer">Інформаційний інструмент епідеміологічного моніторингу. Перед офіційним використанням перевірте значення за первинним звітом.</footer>
@@ -259,8 +275,40 @@ function updateNewPanels(p){
     vaccination.innerHTML='<div class="kpi"><div class="label">Щеплено проти грипу за звітний тиждень</div><div class="value">'+displayValue(n)+'</div><div class="note">'+(n===0?'У джерелі вказано підтверджене нульове значення, а не відсутність даних.':n==null?'Дані про вакцинацію не підтверджені для цього звітного періоду.':'осіб за даними джерела')+'</div></div>';
   }
 }
+
+function renderTerritoryCases(selected){
+  const host=document.getElementById('territoryCases');
+  const note=document.getElementById('territoryCasesNote');
+  if(!host)return;
+  const all=getAllDashboardPeriods();
+  const rows=Array.isArray(all)?all:[];
+  const weekRows=rows.filter(r=>Number(r.year)===Number(selected.year)&&Number(r.week)===Number(selected.week));
+  const territoryRows=weekRows.filter(r=>{
+    const name=normalizeTerritory(r.territory||'');
+    return name && name!=='Тернопільська область' && !/^(?:всього|усього|разом)(?:\\s|$)/i.test(name) && r.cases_total!=null;
+  });
+  const seen=new Map();
+  territoryRows.forEach(r=>{
+    const name=normalizeTerritory(r.territory);
+    if(!seen.has(name))seen.set(name,r);
+  });
+  const list=[...seen.values()].sort((a,b)=>String(a.territory).localeCompare(String(b.territory),'uk'));
+  if(!list.length){
+    host.innerHTML='<div class="territory-case-empty">Для вибраного тижня джерело не містить підтверджених показників за окремими територіями. Обласний підсумок не розподіляється автоматично.</div>';
+    if(note)note.textContent='Дані відображаються лише для територій, наявних у джерелі за вибраний тиждень.';
+    return;
+  }
+  if(note)note.textContent='Звітний тиждень '+fmt(selected.week)+' · '+dateShort(selected.period_start)+' – '+dateShort(selected.period_end)+'. Показано '+fmt(list.length)+' територіальних рядків із джерела; обласний підсумок виключено, щоб уникнути подвійного підрахунку.';
+  host.innerHTML='<div class="territory-cases-grid">'+list.map(r=>{
+    const name=escapeMapText(normalizeTerritory(r.territory));
+    const selectedFlag=normalizeTerritory(r.territory)===normalizeTerritory(selected.territory);
+    const detail=r.incidence_per_100k==null?'Інтенсивний показник: немає даних':'На 100 тис. населення: '+fmt(r.incidence_per_100k);
+    return '<div class="territory-case-item"'+(selectedFlag?' aria-current="true"':'')+'><div><div class="territory-case-name">'+name+'</div><div class="territory-case-meta">'+detail+'</div></div><div class="territory-case-value">'+fmt(r.cases_total)+'</div></div>';
+  }).join('')+'</div>';
+}
+
 function render(p,meta){
-  window.lastRenderedPeriod=p; window.lastRenderedMeta=meta; updateNewPanels(p); renderAnalyticsModules(p);
+  window.lastRenderedPeriod=p; window.lastRenderedMeta=meta; updateNewPanels(p); renderAnalyticsModules(p); renderTerritoryCases(p);
   document.getElementById('periodLabel').textContent=i18n[currentLanguage].reportAsOf+dateShort(p.report_date);
   if(currentLanguage==='en'){
     const n=v=>v==null?'No data':fmt(v), pp=v=>v==null?'No data':(v>0?'+':'')+fmt(v)+'%';
@@ -356,8 +404,7 @@ function renderAnalyticsModules(selected){
   if(intensity){
     const v=selected.incidence_per_100k,low=selected.intensity_low_threshold??selected.threshold_low,mid=selected.intensity_medium_threshold??selected.threshold_medium,high=selected.intensity_high_threshold??selected.threshold_high,max=Math.max(v||0,low||0,mid||0,high||0,1)*1.15;
     const label=v==null?'Немає даних':low!=null&&v<low?'Нижче низького порогу':mid!=null&&v>=mid?'Середній або вищий рівень':low!=null&&v>=low?'Низький рівень':'Пороги не визначені';
-    intensity.innerHTML='<div class="intensity-number">'+n(v)+' <span>випадків на 100 тис.</span></div><span class="pill">'+label+'</span><div class="threshold-track"><div class="threshold-fill" style="width:'+Math.min(100,(v||0)/max*100)+'%"></div>'+[[low,'Низький'],[mid,'Середній'],[high,'Високий']].filter(x=>x[0]!=null).map(x=>'<i title="'+x[1]+': '+n(x[0])+'" style="left:'+Math.min(100,x[0]/max*100)+'%"></i>').join('')+'</div><div class="threshold-labels"><span>0</span><span>Поріг низької інтенсивності: '+n(low)+'</span></div>';
-  }
+    intensity.innerHTML='<div class="intensity-number">'+n(v)+' <span>випадків на 100 тис.</span></div><span class="pill">'+label+'</span><div class="threshold-track"><div class="threshold-fill" style="width:'+Math.min(100,(v||0)/max*100)+'%"></div>'+[[low,'Низький'],[mid,'Середній'],[high,'Високий']].filter(x=>x[0]!=null).map(x=>'<i title="'+x[1]+': '+n(x[0])+'" style="left:'+Math.min(100,x[0]/max*100)+'%"></i>').join('')+'</div><div class="threshold-labels"><span>0</span><span>Поріг низької інтенсивності: '+n(low)+'</span></div>';  }
   const comp=document.getElementById('territoryComparison');
   if(comp){
     const matches=all.filter(p=>Number(p.year)===Number(selected.year)&&Number(p.week)===Number(selected.week)&&normalizeTerritory(p.territory)!=='Тернопільська область'&&typeof p.cases_total==='number'&&Number.isFinite(p.cases_total)).sort((a,b)=>b.cases_total-a.cases_total).slice(0,12),max=Math.max(1,...matches.map(p=>p.cases_total));
@@ -537,7 +584,6 @@ const headerAliases = {
   intensity_high_threshold:['intensity_high_threshold','Поріг високої інтенсивності','Порогове значення високої інтенсивності'],
   population_total:['population_total','Чисельність населення','Населення','Кількість населення','Population','Population total'],
 
-
   cases_age_under_1:['cases_age_under_1','До 1 року','Діти до 1 року','Захворіло до 1 року'],
   cases_age_1_4:['cases_age_1_4','1–4 роки','1-4 роки','Діти 1–4 роки'],
   cases_age_5_9:['cases_age_5_9','5–9 років','5-9 років','Діти 5–9 років'],
@@ -716,8 +762,7 @@ async function refreshFromSheets(){
       let index=headers.findIndex(h=>normalized.includes(h));
       if(index<0 && headerPatterns[field]) index=headers.findIndex(h=>headerPatterns[field].some(re=>re.test(h)));
       columns[field]=index;
-    }
-    const mapped=rows.slice(1).map(row=>{
+    }    const mapped=rows.slice(1).map(row=>{
       const obj={};for(const [field,index] of Object.entries(columns)){if(index>=0)obj[field]=['pcr_result_summary','schoolchildren_share_denominator','covid_cases_population','record_type','vaccination_brand','risk_group'].includes(field)?((row[index]||'').trim()||null):field==='territory'?(String(row[index]||'').trim()?normalizeTerritory(row[index]):null):parseNumber(row[index]);} if(obj.territory==null) return null;
       if(obj.covid_cases_population){const cp=String(obj.covid_cases_population).toLocaleLowerCase('uk-UA');obj.covid_cases_population=cp.includes('дорос')||cp==='adults'?'adults':cp.includes('все насел')||cp.includes('усього')||cp==='all_population'?'all_population':'unknown';}
       if(obj.schoolchildren_share_denominator){const sd=String(obj.schoolchildren_share_denominator).toLocaleLowerCase('uk-UA');obj.schoolchildren_share_denominator=sd.includes('діт')||sd==='cases_children'?'cases_children':sd.includes('всі')||sd.includes('усього')||sd==='cases_total'?'cases_total':'unknown';}
