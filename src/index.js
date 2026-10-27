@@ -1,4 +1,4 @@
-const SOURCE_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR2Ykj8zO9do27houb1St5VTtPx1gltVf9OBaic3Hp8G13FB9FJ-oYOOYF5dlbV_CdrszMdIiWaMVnd/pub?output=csv";
+const SOURCE_CSV_URL = "https://docs.google.com/spreadsheets/d/1Oxri7kz6UMFpkTENTjoQUHwY5yCuhczJY22c0K5fqbI/export?format=csv&gid=1951237247";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
