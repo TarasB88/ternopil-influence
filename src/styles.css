@@ -1,0 +1,103 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-display: "Oswald", "IBM Plex Sans", sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-header: var(--header);
+  --color-header-foreground: var(--header-foreground);
+  --color-teal: var(--teal);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-level-below: var(--level-below);
+  --color-level-low: var(--level-low);
+  --color-level-medium: var(--level-medium);
+  --color-level-high: var(--level-high);
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.975 0.008 220);
+  --foreground: oklch(0.26 0.05 235);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.26 0.05 235);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.26 0.05 235);
+  --primary: oklch(0.42 0.09 235);
+  --primary-foreground: oklch(0.98 0.005 220);
+  --secondary: oklch(0.93 0.025 220);
+  --secondary-foreground: oklch(0.32 0.07 235);
+  --muted: oklch(0.95 0.012 220);
+  --muted-foreground: oklch(0.5 0.03 235);
+  --accent: oklch(0.9 0.04 200);
+  --accent-foreground: oklch(0.3 0.07 220);
+  --destructive: oklch(0.577 0.2 27);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.89 0.02 225);
+  --input: oklch(0.89 0.02 225);
+  --ring: oklch(0.55 0.1 210);
+  --header: oklch(0.34 0.07 232);
+  --header-foreground: oklch(0.97 0.01 220);
+  --teal: oklch(0.6 0.1 195);
+  --warning: oklch(0.55 0.13 70);
+  --warning-soft: oklch(0.96 0.04 85);
+  --chart-1: oklch(0.45 0.1 240);
+  --chart-2: oklch(0.6 0.1 195);
+  --chart-3: oklch(0.7 0.08 220);
+  --chart-4: oklch(0.52 0.08 260);
+  --chart-5: oklch(0.78 0.07 185);
+  --level-below: oklch(0.65 0.1 195);
+  --level-low: oklch(0.8 0.13 95);
+  --level-medium: oklch(0.7 0.15 55);
+  --level-high: oklch(0.58 0.19 28);
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+  h1, h2, h3 { font-family: var(--font-display); letter-spacing: 0.01em; }
+}
+
+@utility section-title {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-primary);
+}
