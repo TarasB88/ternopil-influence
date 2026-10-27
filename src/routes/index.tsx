@@ -502,7 +502,7 @@ function RespiratorySituation({ week, sample, current, previous, fetchedAt }: { 
       {!current ? (
         <p className="text-sm text-muted-foreground">Для вибраного періоду немає підсумкового рядка в джерелі даних.</p>
       ) : (
-        <div className="space-y-4 text-sm leading-7">
+        <div className="flex flex-col gap-[1pt] text-sm leading-7">
           <p><strong>Епідситуація із захворюваності на грип, ГРВІ та COVID-19 у Тернопільській області</strong></p>
           <p>Інформуємо про результати епідеміологічного моніторингу за грипом, ГРВІ та COVID-19 станом на {reportingDate}.</p>
           <p>Загальна захворюваність на грип, ГРВІ та COVID-19 за останні 7 днів склала {incidenceText} випадки на 100 тисяч населення (захворіло {totalCasesText} осіб), що на {lowThresholdText} епідемічного порогу низької інтенсивності.</p>
