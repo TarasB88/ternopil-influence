@@ -127,6 +127,8 @@ function Dashboard() {
 
         <RespiratorySituation week={week} sample={sample} current={total} previous={totalRow(prevRows)} fetchedAt={data.fetchedAt} />
 
+        <OblastIndicator current={total} previous={totalRow(prevRows)} week={week} />
+
         <Kpis focus={focus} prev={prevFocus} prevWeek={prevWeek} label={territory ?? "Уся область"} />
 
         <div className="grid gap-6 lg:grid-cols-5">
@@ -415,6 +417,67 @@ function RespiratorySituation({ week, sample, current, previous, fetchedAt }: { 
         </div>
       )}
     </Card>
+  );
+}
+
+function OblastIndicator({ current, previous, week }: { current?: Row; previous?: Row; week: string }) {
+  const cases = num(current?.cases_total);
+  const incidence = num(current?.incidence_per_100k);
+  const hospital = num(current?.hospitalized_total);
+  const previousIncidence = num(previous?.incidence_per_100k);
+  const previousCases = num(previous?.cases_total);
+  const low = num(current?.intensity_low_threshold);
+  const medium = num(current?.intensity_medium_threshold);
+  const high = num(current?.intensity_high_threshold);
+  const level = current ? intensityLevel(current) : "nodata";
+  const change = (now: number | null, before: number | null) =>
+    now === null || before === null || before === 0 ? null : ((now - before) / before) * 100;
+  const incidenceChange = change(incidence, previousIncidence);
+  const casesChange = change(cases, previousCases);
+  const changeLabel = (value: number | null) =>
+    value === null ? "немає даних для порівняння" : `${value > 0 ? "+" : ""}${fmt(value, 1)}% до попереднього тижня`;
+  const thresholdLabel = incidence === null || low === null
+    ? "Порівняння з епідемічним порогом: немає даних"
+    : incidence < low
+      ? `${fmt(((low - incidence) / low) * 100, 1)}% нижче порогу низької інтенсивності`
+      : medium !== null && incidence >= medium
+        ? high !== null && incidence >= high ? "Досягнуто порогу високої інтенсивності" : "Досягнуто порогу середньої інтенсивності"
+        : "Досягнуто порогу низької інтенсивності";
+  return (
+    <section className="rounded-xl border-2 border-primary/20 bg-card p-5 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="section-title">Обласний показник</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">Тернопільська область · тиждень {week.split("-")[1] ?? "—"}</p>
+        </div>
+        <LevelBadge l={level} />
+      </div>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-lg bg-muted/60 p-4">
+          <div className="text-xs text-muted-foreground">Захворюваність на 100 тис. населення</div>
+          <div className="mt-1 font-display text-3xl font-bold text-primary">{fmt(incidence, 1)}</div>
+          <div className="mt-1 text-xs text-muted-foreground">{changeLabel(incidenceChange)}</div>
+        </div>
+        <div className="rounded-lg bg-muted/60 p-4">
+          <div className="text-xs text-muted-foreground">Випадки за тиждень</div>
+          <div className="mt-1 font-display text-3xl font-bold">{fmt(cases)}</div>
+          <div className="mt-1 text-xs text-muted-foreground">{changeLabel(casesChange)}</div>
+        </div>
+        <div className="rounded-lg bg-muted/60 p-4">
+          <div className="text-xs text-muted-foreground">Госпіталізовано</div>
+          <div className="mt-1 font-display text-3xl font-bold">{fmt(hospital)}</div>
+          <div className="mt-1 text-xs text-muted-foreground">За вибраний звітний тиждень</div>
+        </div>
+        <div className="rounded-lg bg-muted/60 p-4">
+          <div className="text-xs text-muted-foreground">Епідемічний поріг</div>
+          <div className="mt-1 text-base font-semibold">{thresholdLabel}</div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            {low === null ? "Пороги відсутні в джерелі" : `Низький: ${fmt(low, 1)}${medium === null ? "" : ` · середній: ${fmt(medium, 1)}`}${high === null ? "" : ` · високий: ${fmt(high, 1)}`}`}
+          </div>
+        </div>
+      </div>
+      {!current && <p className="mt-3 text-sm text-muted-foreground">Для вибраного періоду обласний підсумок відсутній у джерелі даних.</p>}
+    </section>
   );
 }
 
