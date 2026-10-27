@@ -7,7 +7,8 @@ import {
 } from "recharts";
 import {
   Activity, AlertTriangle, Baby, BedDouble, Download, RefreshCw, RotateCcw, Search, Syringe, Users, X,
-  ArrowUpDown,
+  ArrowUpDown, ShieldPlus, Microscope, HeartPulse, MapPin, CalendarDays, Stethoscope,
+  ChartNoAxesCombined, Thermometer, Hospital, ShieldCheck, ClipboardList,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { getDashboardData, type Row } from "@/lib/sheets.functions";
@@ -65,17 +66,43 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen">
-      <header className="bg-header text-header-foreground">
-        <div className="mx-auto max-w-7xl px-4 py-6 md:px-6">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.2em] opacity-75">Тернопільська область · громадське здоров'я</p>
-              <h1 className="mt-1 text-2xl font-bold uppercase md:text-4xl">Грип, ГРВІ та COVID-19</h1>
-              <p className="mt-1 text-sm opacity-80">Захворюваність, госпіталізації, інтенсивність і вакцинація проти грипу</p>
+      <header className="relative isolate overflow-hidden bg-gradient-to-br from-slate-950 via-teal-950 to-cyan-900 text-white shadow-lg">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -right-20 -top-32 h-96 w-96 rounded-full border border-white/10" />
+          <div className="absolute -right-8 -top-20 h-72 w-72 rounded-full border border-white/10" />
+          <div className="absolute right-24 top-12 h-40 w-40 rounded-full bg-cyan-400/10 blur-3xl" />
+          <div className="absolute bottom-0 left-1/3 h-24 w-96 rounded-full bg-teal-400/10 blur-3xl" />
+        </div>
+        <div className="relative mx-auto max-w-7xl px-4 py-7 md:px-6 md:py-9">
+          <div className="flex flex-wrap items-center justify-between gap-6">
+            <div className="flex min-w-0 items-start gap-4">
+              <div className="hidden shrink-0 rounded-2xl border border-white/15 bg-white/10 p-3 shadow-inner backdrop-blur-sm sm:block">
+                <ShieldPlus className="h-12 w-12 text-cyan-200" strokeWidth={1.5} />
+              </div>
+              <div className="min-w-0">
+                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-teal-200/25 bg-teal-300/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-teal-100">
+                  <Microscope className="h-3.5 w-3.5" />
+                  Епідеміологічний нагляд · Тернопільська область
+                </div>
+                <h1 className="text-2xl font-extrabold leading-tight tracking-tight md:text-4xl">Грип, ГРВІ та COVID-19</h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-cyan-50/80 md:text-base">
+                  Щотижневий моніторинг захворюваності, госпіталізацій, епідемічної інтенсивності та вакцинації
+                </p>
+                <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium text-cyan-50/90">
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-white/10 px-2.5 py-1.5"><HeartPulse className="h-3.5 w-3.5 text-rose-200" /> Захворюваність</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-white/10 px-2.5 py-1.5"><Hospital className="h-3.5 w-3.5 text-sky-200" /> Госпіталізації</span>
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-white/10 px-2.5 py-1.5"><Syringe className="h-3.5 w-3.5 text-emerald-200" /> Вакцинація</span>
+                </div>
+              </div>
             </div>
-            <div className="rounded-lg bg-header-foreground/10 px-4 py-2 text-right">
-              <div className="text-xs opacity-75">Тиждень {sample?.week} / {sample?.year}</div>
-              <div className="font-display text-xl font-semibold">{fmtDate(sample?.period_start ?? null)} – {fmtDate(sample?.period_end ?? null)}</div>
+            <div className="w-full rounded-2xl border border-white/15 bg-slate-950/25 p-4 shadow-xl backdrop-blur-sm sm:w-auto sm:min-w-[260px]">
+              <div className="flex items-center justify-between gap-4">
+                <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-cyan-100/75"><CalendarDays className="h-4 w-4" /> Звітний період</span>
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-300/15 px-2 py-1 text-[10px] font-semibold text-emerald-100"><span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> Дані дашборду</span>
+              </div>
+              <div className="mt-3 text-sm text-white/70">Тиждень {sample?.week ?? "—"} / {sample?.year ?? "—"}</div>
+              <div className="mt-1 text-lg font-bold tracking-tight md:text-xl">{fmtDate(sample?.period_start ?? null)} – {fmtDate(sample?.period_end ?? null)}</div>
+              <div className="mt-3 flex items-center gap-1.5 border-t border-white/10 pt-3 text-xs text-cyan-100/65"><MapPin className="h-3.5 w-3.5" /> Тернопільська область, Україна</div>
             </div>
           </div>
         </div>
@@ -189,10 +216,26 @@ function Dashboard() {
 }
 
 function Card({ title, sub, children, className = "" }: { title: string; sub?: string; children: React.ReactNode; className?: string }) {
+  const Icon = title.includes("територ") || title.includes("Територ") ? MapPin
+    : title.includes("Випадки") || title.includes("захворюван") || title.includes("Динаміка") ? ChartNoAxesCombined
+    : title.includes("Діти") || title.includes("Вікова") ? Baby
+    : title.includes("Інтенсивність") || title.includes("поріг") ? Thermometer
+    : title.includes("вакцин") || title.includes("щепл") ? Syringe
+    : title.includes("епідем") || title.includes("Якість") ? ShieldCheck
+    : title.includes("госпітал") ? Hospital
+    : title.includes("ризик") ? AlertTriangle
+    : ClipboardList;
   return (
-    <section className={`rounded-xl border bg-card p-5 shadow-sm ${className}`}>
-      <h2 className="section-title">{title}</h2>
-      {sub && <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>}
+    <section className={`rounded-xl border border-border/80 bg-card p-5 shadow-sm transition-shadow hover:shadow-md ${className}`}>
+      <div className="flex items-start gap-3">
+        <span className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Icon className="h-[18px] w-[18px]" strokeWidth={1.8} aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="section-title">{title}</h2>
+          {sub && <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{sub}</p>}
+        </div>
+      </div>
       <div className="mt-4">{children}</div>
     </section>
   );
