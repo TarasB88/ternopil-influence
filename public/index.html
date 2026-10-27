@@ -169,7 +169,8 @@ function exportTableCsv(){
   const csv=String.fromCharCode(65279)+rows.map(r=>r.map(v=>{const x=v==null?'':String(v);return '"'+x.replace(/"/g,'""')+'"';}).join(';')).join(String.fromCharCode(13,10));
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='ternopil-influence-data.csv';a.click();URL.revokeObjectURL(a.href);
 }
-\nfunction render(p,meta){
+
+function render(p,meta){
   window.lastRenderedPeriod=p; window.lastRenderedMeta=meta; updateNewPanels(p);
   document.getElementById('periodLabel').textContent=i18n[currentLanguage].reportAsOf+dateShort(p.report_date);
   if(currentLanguage==='en'){
