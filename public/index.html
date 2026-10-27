@@ -152,7 +152,7 @@ function render(p,meta){
   document.getElementById('sourceNote').textContent=meta.source+'. У джерелі доступний один період; історичні графіки не відображаються, доки не буде додано попередні тижні.';
 }
 function normalizeTerritory(value){
-  const raw=String(value||'').trim().replace(/\\s+/g,' ');
+  const raw=String(value||'').trim().replace(/\s+/g,' ');
   if(!raw) return 'Тернопільська область';
   const low=raw.toLocaleLowerCase('uk-UA');
   if(['тернопільська область','тернопільська обл.','тернопільська обл','тернопільщина','ternopil oblast'].includes(low)) return 'Тернопільська область';
