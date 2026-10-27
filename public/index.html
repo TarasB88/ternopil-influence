@@ -200,7 +200,7 @@ function render(p,meta){
     document.getElementById('sourceNote').textContent=(meta.source&&meta.source.includes('Google Sheets')?meta.source:'User-provided report text')+'. Historical trends are unavailable until previous weeks are added to the dataset.';
     return;
   }
-  const missing = v => v == null || v === '' ? '0' : fmt(v);
+  const missing = v => v == null || v === '' ? '—' : fmt(v);
   const percent = v => v == null ? '—' : fmt(Math.abs(v))+'%';
   const changeWord = (v, increase, decrease) => v == null ? 'зміни не визначено' : v > 0 ? increase : v < 0 ? decrease : 'не змінилась';
   const comparison = (current, previous) => current == null || previous == null ? '' : ' ('+fmt(current)+' випадків проти '+fmt(previous)+')';
@@ -545,7 +545,36 @@ async function refreshFromSheets(){
       period_end:[/^(?:кінець періоду|дата завершення|по|період по|period end)$/],
       year:[/^(?:рік|звітний рік|year)$/],
       week:[/^(?:тиждень|звітний тиждень|епідемічний тиждень|номер тижня|week)$/],
-      incidence_per_100k:[/інтенсивний показник/,/показник на 100000/,/на 100000 населення/]
+      incidence_per_100k:[/інтенсивний показник/,/показник на 100000/,/на 100000 населення/,/захворюваність на 100 тис/],
+      population_total:[/^(?:чисельність населення|населення|кількість населення|population|population total)$/],
+      intensity_low_threshold:[/низьк.*(?:поріг|інтенсивност|епідемічн)/,/поріг низької інтенсивності/],
+      intensity_medium_threshold:[/середн.*(?:поріг|інтенсивност)/],
+      intensity_high_threshold:[/висок.*(?:поріг|інтенсивност)/],
+      cases_age_under_1:[/^(?:до 1 року|діти до 1 року|захворіло до 1 року|cases age under 1)$/],
+      cases_age_1_4:[/^(?:1 ?- ?4 роки|діти 1 ?- ?4 роки|cases age 1 4)$/],
+      cases_age_5_9:[/^(?:5 ?- ?9 років|діти 5 ?- ?9 років|cases age 5 9)$/],
+      cases_age_10_14:[/^(?:10 ?- ?14 років|діти 10 ?- ?14 років|cases age 10 14)$/],
+      cases_age_15_17:[/^(?:15 ?- ?17 років|діти 15 ?- ?17 років|cases age 15 17)$/],
+      epidemic_threshold_difference_pct:[/відхилення від епід(?:емічного)? порогу/],
+      cases_previous_week:[/захворіло минулого тижня/,/попередній тиждень/],
+      cases_change_pct:[/зміна до попереднього тижня/,/темп приросту/],
+      children_share_pct:[/питома вага дітей/,/частка дітей/],
+      children_previous_week:[/діти минулого тижня/,/захворіло дітей попереднього тижня/],
+      children_change_pct:[/зміна серед дітей/,/приріст дітей/],
+      schoolchildren_previous_week:[/школярі минулого тижня/,/захворіло школярів попереднього тижня/],
+      schoolchildren_change_pct:[/зміна серед школярів/,/приріст школярів/],
+      schoolchildren_share_pct:[/питома вага школярів/,/школярі від дітей/],
+      hospitalized_children_share_pct:[/частка госпіталізованих дітей/],
+      hospitalized_previous_week:[/госпіталізовано минулого тижня/,/госпіталізації попереднього тижня/],
+      hospitalizations_change_pct:[/зміна госпіталізацій/],
+      covid_cases:[/випадки covid-?19/,/захворіло на covid-?19/],
+      covid_cases_previous_week:[/covid-?19 минулого тижня/,/випадки covid-?19 попереднього тижня/],
+      deaths_influenza_covid:[/летальні випадки/,/померло від грипу та covid/],
+      pcr_tested:[/обстежено методом пцр/,/пцр обстежено/,/кількість пцр досліджень/],
+      pcr_positive:[/пцр позитивні/,/позитивні результати пцр/,/виявлено методом пцр/],
+      wastewater_samples_total:[/проби стічних вод всього/,/досліджено проб стічних вод/],
+      wastewater_sars_cov2_positive:[/sars-cov-2 позитивні проби/,/позитивні проби на sars-cov-2/],
+      wastewater_influenza_ab_positive:[/грип a\/b позитивні проби/,/позитивні проби на грип а\/в/]
     };
     for(const [field,aliases] of Object.entries(headerAliases)){
       const normalized=aliases.map(normalizeHeader);
