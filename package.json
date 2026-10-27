@@ -1,0 +1,14 @@
+{
+  "name": "ternopil-influence",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ternopil Oblast influenza, ARVI and COVID-19 epidemiological dashboard",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "start": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
