@@ -79,7 +79,7 @@ function setLanguage(lang) {
   if (window.initialDashboardData) refreshPeriodOptions(selectedPeriodKey);
   if (window.lastSourceStatus) document.getElementById('refreshStatus').textContent=window.lastSourceStatus;
   const mapStatus=document.getElementById('mapStatus');
-  if(mapStatus && window.hromadaMapStatusKey){ mapStatus.textContent=window.hromadaMapStatusKey==='loaded' ? i18n[lang].mapLoadedPrefix+(hromadaFeatures.length||55)+i18n[lang].mapLoadedSuffix : window.hromadaMapStatusKey==='cdn' ? i18n[lang].mapCdnFailed : i18n[lang].mapLoading; }
+  if(mapStatus && window.hromadaMapStatusKey){ mapStatus.textContent=window.hromadaMapStatusKey==='loaded' ? i18n[lang].mapLoadedPrefix+(hromadaFeatures.length||55)+i18n[lang].mapLoadedSuffix : window.hromadaMapStatusKey==='cdn' ? i18n[lang].mapCdnFailed : window.hromadaMapStatusKey==='error' ? i18n[lang].mapLoadFailed+(window.hromadaMapErrorDetail||'') : i18n[lang].mapLoading; }
   if(hromadaLayer) hromadaLayer.eachLayer(layer=>{ const p=layer.feature?.properties||{}, name=p.ADM3_UA||'Community', district=p.ADM2_UA||''; layer.setPopupContent('<strong>'+escapeMapText(name)+'</strong><br>'+escapeMapText(district)+' '+i18n[lang].mapPopupDistrict+'<br><span style="color:#607587">'+i18n[lang].mapPopupCode+': '+escapeMapText(p.ADM3_PCODE||'—')+'</span><br><em>'+i18n[lang].mapPopupNoData+'</em>'); });
 }
 const fmt = n => n == null ? i18n[currentLanguage].noData : new Intl.NumberFormat(currentLanguage==='uk'?'uk-UA':'en-GB',{maximumFractionDigits:1}).format(n);
@@ -245,7 +245,7 @@ async function initHromadaMap(){
     updateHromadaMapSelection();
     setTimeout(()=>hromadaMap&&hromadaMap.invalidateSize(),100);
   }catch(error){
-    window.hromadaMapStatusKey='error'; status.textContent=i18n[currentLanguage].mapLoadFailed+error.message;
+    window.hromadaMapStatusKey='error'; window.hromadaMapErrorDetail=error.message; status.textContent=i18n[currentLanguage].mapLoadFailed+error.message;
     console.error(error);
   }
 }
