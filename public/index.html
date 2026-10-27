@@ -274,6 +274,38 @@ function uniquePeriodsForTerritory(periods,territory){
   return filtered.sort((a,b)=>(b.period_end||'').localeCompare(a.period_end||'')||b.year-a.year||b.week-a.week)
     .filter(p=>{const key=periodKey(p);if(seen.has(key))return false;seen.add(key);return true;});
 }
+function enrichDashboardPeriods(periods){
+  const rows=(periods||[]).map(p=>({...p,territory:normalizeTerritory(p.territory||'Тернопільська область')}));
+  const byTerritory=new Map();
+  for(const p of rows){const key=p.territory||'Тернопільська область';if(!byTerritory.has(key))byTerritory.set(key,[]);byTerritory.get(key).push(p);}
+  const pct=(num,den)=>Number.isFinite(num)&&Number.isFinite(den)&&den>0?Math.round(num/den*1000)/10:null;
+  for(const list of byTerritory.values()){
+    list.sort((a,b)=>(Number(a.year)||0)-(Number(b.year)||0)||(Number(a.week)||0)-(Number(b.week)||0));
+    for(let i=0;i<list.length;i++){
+      const p=list[i],prev=list[i-1];
+      // Derive percentages only when the required numerator and denominator exist.
+      if(p.children_share_pct==null)p.children_share_pct=pct(p.cases_children,p.cases_total);
+      if(p.schoolchildren_share_pct==null)p.schoolchildren_share_pct=pct(p.cases_schoolchildren,p.cases_children);
+      if(p.hospitalized_children_share_pct==null)p.hospitalized_children_share_pct=pct(p.hospitalized_children,p.hospitalized_total);
+      // Age bands are a subset of children; use them only when all five values are present.
+      const ageFields=['cases_age_under_1','cases_age_1_4','cases_age_5_9','cases_age_10_14','cases_age_15_17'];
+      if(p.cases_children==null&&ageFields.every(k=>Number.isFinite(p[k])))p.cases_children=ageFields.reduce((sum,k)=>sum+p[k],0);
+      if(prev){
+        const change=(now,before)=>Number.isFinite(now)&&Number.isFinite(before)&&before>0?Math.round((now-before)/before*1000)/10:null;
+        if(p.cases_previous_week==null&&Number.isFinite(prev.cases_total))p.cases_previous_week=prev.cases_total;
+        if(p.children_previous_week==null&&Number.isFinite(prev.cases_children))p.children_previous_week=prev.cases_children;
+        if(p.schoolchildren_previous_week==null&&Number.isFinite(prev.cases_schoolchildren))p.schoolchildren_previous_week=prev.cases_schoolchildren;
+        if(p.hospitalized_previous_week==null&&Number.isFinite(prev.hospitalized_total))p.hospitalized_previous_week=prev.hospitalized_total;
+        if(p.covid_cases_previous_week==null&&Number.isFinite(prev.covid_cases))p.covid_cases_previous_week=prev.covid_cases;
+        if(p.cases_change_pct==null)p.cases_change_pct=change(p.cases_total,p.cases_previous_week);
+        if(p.children_change_pct==null)p.children_change_pct=change(p.cases_children,p.children_previous_week);
+        if(p.schoolchildren_change_pct==null)p.schoolchildren_change_pct=change(p.cases_schoolchildren,p.schoolchildren_previous_week);
+        if(p.hospitalizations_change_pct==null)p.hospitalizations_change_pct=change(p.hospitalized_total,p.hospitalized_previous_week);
+      }
+    }
+  }
+  return rows;
+}
 function refreshPeriodOptions(preferredKey){
   const all=(window.liveSheetData||window.initialDashboardData).periods;
   const territory=document.getElementById('territorySelect').value||'Тернопільська область';
@@ -330,7 +362,7 @@ async function init(){
   const response=await fetch('/data/weekly.json');
   if(!response.ok)throw new Error('Не вдалося завантажити дані');
   const data=await response.json();
-  data.periods=(data.periods||[]).map(p=>({...p,territory:normalizeTerritory(p.territory||'Тернопільська область')}));
+  data.periods=enrichDashboardPeriods(data.periods||[]);
   window.initialDashboardData=data;window.liveSheetData=data;
   const territories=[...new Set(data.periods.map(p=>normalizeTerritory(p.territory)))];
   if(!territories.includes('Тернопільська область'))territories.unshift('Тернопільська область');
@@ -525,7 +557,7 @@ async function refreshFromSheets(){
     const legacyMapped=parseLegacyWeeklyReport(rows);
     if(legacyMapped.length>mapped.length) mapped.splice(0,mapped.length,...legacyMapped);
     if(mapped.length){
-      const data={periods:mapped.map(p=>({...p,territory:p.territory||null})),metadata:{source:'Google Sheets · '+new Date().toLocaleString(currentLanguage==='uk'?'uk-UA':'en-GB')}};
+      const data={periods:enrichDashboardPeriods(mapped.map(p=>({...p,territory:p.territory||null}))),metadata:{source:'Google Sheets · '+new Date().toLocaleString(currentLanguage==='uk'?'uk-UA':'en-GB')}};
       window.liveSheetData=data;
       const territorySelect=document.getElementById('territorySelect');
       const previousTerritory=territorySelect.value||'Тернопільська область';
