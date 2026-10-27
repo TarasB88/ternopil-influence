@@ -13,6 +13,37 @@ function readJson(path) {
 
 
 const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+
+const requiredDashboardIds = [
+  "territorySelect", "periodSelect", "refreshButton", "refreshStatus",
+  "epidemicStatusCard", "epidemicStatus", "ageStructure", "vaccinationPanel",
+  "summary", "kpis", "weeklyTrend", "intensityPanel", "territoryComparison",
+  "periodHistory", "structure", "hospital", "covid", "lab", "hromadaMap",
+  "mapStatus", "sourceNote"
+];
+const seenIds = new Set();
+for (const match of html.matchAll(/\\bid=["']([^"']+)["']/g)) {
+  const id = match[1];
+  if (seenIds.has(id)) {
+    console.error(`FAIL public/index.html: duplicate id "${id}"`);
+    process.exitCode = 1;
+  }
+  seenIds.add(id);
+}
+for (const id of requiredDashboardIds) {
+  if (!seenIds.has(id)) {
+    console.error(`FAIL public/index.html: required dashboard module/control #${id} is missing`);
+    process.exitCode = 1;
+  }
+}
+if (requiredDashboardIds.every((id) => seenIds.has(id)) && !process.exitCode) {
+  console.log(`Dashboard regression check: ${requiredDashboardIds.length} required modules/controls present; no duplicate IDs`);
+}
+if (!html.includes("prefers-reduced-motion") || !html.includes("@media(max-width:760px)")) {
+  console.error("FAIL public/index.html: responsive/mobile or reduced-motion styling is missing");
+  process.exitCode = 1;
+}
+
 const inlineScripts = [...html.matchAll(/<script\b(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)];
 if (!inlineScripts.length) {
   console.error("FAIL public/index.html: no inline JavaScript found to syntax-check");
