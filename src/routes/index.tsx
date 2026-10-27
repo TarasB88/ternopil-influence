@@ -197,9 +197,9 @@ function Card({ title, sub, children, className = "" }: { title: string; sub?: s
 
 function RespiratorySituation({ week, sample, current, previous, fetchedAt }: { week: string; sample?: Row; current?: Row; previous?: Row; fetchedAt: string }) {
   const n = (row: Row | undefined, key: string) => num(row?.[key]);
-  const optionalMetric = (keys: string[]) => {
-    const key = keys.find((k) => current?.[k] !== undefined);
-    return key ? num(current?.[key]) : null;
+  const optionalMetric = (row: Row | undefined, keys: string[]) => {
+    const key = keys.find((k) => row?.[k] !== undefined);
+    return key ? num(row?.[key]) : null;
   };
   const fmtPct = (v: number | null) => v === null ? "—" : fmt(v, 1);
   const deltaPct = (now: number | null, before: number | null) =>
@@ -226,12 +226,13 @@ function RespiratorySituation({ week, sample, current, previous, fetchedAt }: { 
   const childShare = cases !== null && cases > 0 && children !== null ? children / cases * 100 : null;
   const schoolShare = children !== null && children > 0 && schoolchildren !== null ? schoolchildren / children * 100 : null;
   const hospitalChildShare = hospital !== null && hospital > 0 && hospitalChildren !== null ? hospitalChildren / hospital * 100 : null;
-  const covid = optionalMetric(["cases_covid19", "covid19_cases", "cases_covid"]);
-  const prevCovid = optionalMetric(["previous_cases_covid19", "prev_covid19_cases"]);
-  const deaths = optionalMetric(["deaths_total", "deaths_influenza_covid19", "deaths_flu_covid"]);
-  const tests = optionalMetric(["lab_tests_total", "pcr_tested", "tested_by_pcr"]);
-  const wastewater = optionalMetric(["wastewater_samples_total", "wastewater_samples", "sewage_samples"]);
-  const negativeWastewater = optionalMetric(["wastewater_negative", "wastewater_negative_samples"]);
+  const covid = optionalMetric(current, ["cases_covid19", "covid19_cases", "cases_covid"]);
+  const prevCovid = optionalMetric(previous, ["cases_covid19", "covid19_cases", "cases_covid"]);
+  const deaths = optionalMetric(current, ["deaths_total", "deaths_influenza_covid19", "deaths_flu_covid"]);
+  const tests = optionalMetric(current, ["lab_tests_total", "pcr_tested", "tested_by_pcr"]);
+  const pcrNegative = optionalMetric(current, ["lab_tests_negative", "pcr_negative", "negative_pcr_results"]);
+  const wastewater = optionalMetric(current, ["wastewater_samples_total", "wastewater_samples", "sewage_samples"]);
+  const negativeWastewater = optionalMetric(current, ["wastewater_negative", "wastewater_negative_samples"]);
   const periodStart = sample?.period_start ? fmtDate(sample.period_start) : "—";
   const periodEnd = sample?.period_end ? fmtDate(sample.period_end) : "—";
   const period = `${periodStart} – ${periodEnd}`;
@@ -257,13 +258,13 @@ function RespiratorySituation({ week, sample, current, previous, fetchedAt }: { 
         <div className="space-y-4 text-sm leading-7">
           <p><strong>Епідситуація із захворюваності на грип, ГРВІ та COVID-19 у Тернопільській області</strong></p>
           <p>Інформуємо про результати епідеміологічного моніторингу за грипом, ГРВІ та COVID-19 станом на {reportingDate}.</p>
-          <p>Загальна захворюваність на грип, ГРВІ та COVID-19 за останні 7 днів склала {incidenceText} випадки на 100 тисяч населення (захворіло {totalCasesText} осіб), що на {lowThresholdText} епідемічного порогу низької інтенсивності.</p>
+          <p>Загальна захворюваність на грип, ГРВІ та COVID-19 за останні 7 днів склала {incidenceText} випадків на 100 тисяч населення (захворіло {totalCasesText} осіб), що на {lowThresholdText} епідемічного порогу низької інтенсивності.</p>
           <p>За останній ({sample?.week ?? week.split("-")[1] ?? "—"}) тиждень ({reportDay}) кількість захворілих ГРВІ у порівнянні з попереднім тижнем {direction(pctChange)} на {formatChange(pctChange)} ({totalCasesText} випадків проти {prevCases === null ? "—" : fmt(prevCases)}). Питома вага дітей серед хворих склала {fmtPct(childShare)}% ({children === null ? "—" : fmt(children)} ос.), школярів – {fmtPct(schoolShare)}% ({schoolchildren === null ? "—" : fmt(schoolchildren)} ос.) від усіх захворілих дітей. У порівнянні з попереднім тижнем відмічається {direction(childrenChange)} кількість хворих на ГРВІ дітей на {formatChange(childrenChange)} ({children === null ? "—" : fmt(children)} випадків проти {prevChildren === null ? "—" : fmt(prevChildren)}), школярів – {direction(schoolChange)} на {formatChange(schoolChange)} ({schoolchildren === null ? "—" : fmt(schoolchildren)} випадків проти {prevSchoolchildren === null ? "—" : fmt(prevSchoolchildren)}).</p>
           <p>Госпіталізовано за звітний тиждень {hospital === null ? "—" : fmt(hospital)} осіб, із них {hospitalChildren === null ? "—" : fmt(hospitalChildren)} дітей ({fmtPct(hospitalChildShare)}%). Кількість госпіталізованих {direction(hospitalChange)} у порівнянні з минулим тижнем на {formatChange(hospitalChange)} (госпіталізовано {hospital === null ? "—" : fmt(hospital)} осіб проти {prevHospital === null ? "—" : fmt(prevHospital)}).</p>
           <p>За тиждень зареєстровано {covid === null ? "—" : fmt(covid)} випадків (дорослі) захворювання на COVID-19 (на минулому тижні – {prevCovid === null ? "—" : fmt(prevCovid)} випадків).</p>
-          <p>{deaths === 0 ? "Летальних випадків від грипу та COVID-19 в області не зареєстровано." : deaths === null ? "Летальних випадків від грипу та COVID-19 в області не зареєстровано." : `Зареєстровано ${fmt(deaths)} летальних випадків від грипу та COVID-19 в області.`}</p>
-          <p>У вірусологічній лабораторії ДУ «Тернопільський ОЦКПХ МОЗ» методом ПЛР на групу респіраторних вірусів за тиждень обстежено {tests === null ? "—" : fmt(tests)} хворих (результати негативні).</p>
-          <p>За результатами моніторингу стічних вод за тиждень усі {wastewater === null ? "—" : fmt(wastewater)} проби були негативні на віруси SARS-CoV-2, грипу А/В.</p>
+          <p>{deaths === 0 ? "Летальних випадків від грипу та COVID-19 в області не зареєстровано." : deaths === null ? "Летальних випадків від грипу та COVID-19 в області: —." : `Зареєстровано ${fmt(deaths)} летальних випадків від грипу та COVID-19 в області.`}</p>
+          <p>У вірусологічній лабораторії ДУ «Тернопільський ОЦКПХ МОЗ» методом ПЛР на групу респіраторних вірусів за тиждень обстежено {tests === null ? "—" : fmt(tests)} хворих (результати {pcrNegative === null ? "—" : pcrNegative === tests ? "негативні" : `негативні: ${fmt(pcrNegative)}`}).</p>
+          <p>За результатами моніторингу стічних вод за тиждень {wastewater === null ? "—" : `усі ${fmt(wastewater)} проби`} {negativeWastewater === null ? "—" : negativeWastewater === wastewater ? "були негативні" : `негативні: ${fmt(negativeWastewater)} проб`} на віруси SARS-CoV-2, грипу А/В.</p>
         </div>
       )}
     </Card>
