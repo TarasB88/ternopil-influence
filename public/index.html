@@ -581,9 +581,15 @@ async function refreshFromSheets(){
   button.disabled=true; status.textContent=i18n[currentLanguage].loading;
   try{
     const response=await fetch('/api/respiratory?refresh='+Date.now(),{cache:'no-store'});
-    if(!response.ok)throw new Error('HTTP '+response.status);
-    const csv=await response.text(), rows=parseCSV(csv);
-    if(rows.length<2)throw new Error('empty CSV');
+    const csv=await response.text();
+    if(!response.ok){
+      let detail='';
+      try{const j=JSON.parse(csv);detail=j.message||j.status||'';}catch(_){}
+      throw new Error('Джерело респіраторних даних: HTTP '+response.status+(detail?' — '+detail:'')+(csv&&!detail?' — '+csv.slice(0,180).replace(/\\s+/g,' '):''));
+    }
+    if(/<!doctype html|<html/i.test(csv.slice(0,500)))throw new Error('Google Sheets повернув HTML замість CSV. Перевірте публікацію аркуша для перегляду.');
+    const rows=parseCSV(csv);
+    if(rows.length<2)throw new Error('CSV порожній або містить лише заголовок. Перевірте gid аркуша та доступ до Google Sheets.');
     const headers=rows[0].map(normalizeHeader), columns={};
     // Match exact normalized aliases first, then conservative field-specific patterns.
     // Avoid broad "діти" matching for schoolchildren/hospitalized children.
@@ -712,10 +718,15 @@ async function refreshFromSheets(){
       window.lastSourceStatus=diagnostic+warning+' Оновлено: '+new Date().toLocaleTimeString(currentLanguage==='uk'?'uk-UA':'en-GB');
       status.textContent=window.lastSourceStatus;
     }else{
-      window.lastSourceStatus=i18n[currentLanguage].mappingFailed;
+      const headerPreview=(rows[0]||[]).map(v=>String(v||'').trim()).filter(Boolean).slice(0,18).join(' | ');
+      window.lastSourceStatus='CSV отримано ('+Math.max(0,rows.length-1)+' рядків), але не розпізнано жодного придатного епідеміологічного запису. Заголовки: '+(headerPreview||'не визначені')+'. Перевірте назви колонок, особливо територію, рік, тиждень і захворюваність.';
       status.textContent=window.lastSourceStatus;
     }
-  }catch(e){window.lastSourceStatus=i18n[currentLanguage].refreshFailed;status.textContent=window.lastSourceStatus;console.error(e);}
+  }catch(e){
+    window.lastSourceStatus='Помилка оновлення: '+(e&&e.message?e.message:String(e));
+    status.textContent=window.lastSourceStatus;
+    console.error('Google Sheets refresh failed:',e);
+  }
   finally{button.disabled=false;}
 }
 
