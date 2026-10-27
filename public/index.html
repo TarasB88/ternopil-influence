@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#123c5a">
+<meta name="description" content="Епідеміологічна ситуація із захворюваності на грип, ГРВІ та COVID-19 у Тернопільській області">
+<title>Грип, ГРВІ та COVID-19 — Тернопільська область</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#183247;background:#f3f6f9;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0}header{background:#123c5a;color:#fff;padding:26px max(20px,calc((100vw - 1200px)/2)) 22px}
+.eyebrow{font-size:.78rem;text-transform:uppercase;letter-spacing:.09em;opacity:.8}h1{font-size:clamp(1.35rem,3vw,2rem);line-height:1.2;margin:8px 0}
+header p{margin:8px 0 0;color:#dce9f2}.container{max-width:1200px;margin:auto;padding:20px}
+.toolbar{display:flex;gap:12px;align-items:end;flex-wrap:wrap;background:white;border:1px solid #e0e8ee;border-radius:14px;padding:16px;margin-bottom:18px}
+label{display:block;font-size:.82rem;font-weight:700;margin-bottom:6px;color:#4b6274}select{min-width:180px;border:1px solid #cbd8e2;border-radius:8px;padding:10px;background:white;color:#183247;font:inherit}
+.period{margin-left:auto;color:#516a7d;font-size:.9rem}
+.card{background:white;border:1px solid #e0e8ee;border-radius:14px;padding:18px;margin-bottom:18px;box-shadow:0 2px 8px #173d5508}
+.card h2{font-size:1.08rem;margin:0 0 12px}.summary{line-height:1.65;margin:0}.summary p{margin:8px 0}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:18px}
+.kpi{background:white;border:1px solid #e0e8ee;border-radius:14px;padding:16px;min-width:0}.kpi .label{color:#607587;font-size:.82rem}.kpi .value{font-size:clamp(1.4rem,2.8vw,2rem);font-weight:750;margin:8px 0 4px;letter-spacing:-.03em}.kpi .note{font-size:.82rem;color:#607587;line-height:1.4}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}.bar-row{margin:14px 0}.bar-head{display:flex;justify-content:space-between;gap:12px;font-size:.9rem;margin-bottom:7px}.track{height:10px;background:#e8eef3;border-radius:99px;overflow:hidden}.bar{height:100%;background:#2679a7;border-radius:99px}
+.pill{display:inline-block;border-radius:100px;background:#eaf4f9;color:#185b7c;padding:4px 9px;font-size:.78rem;font-weight:700}
+.note{font-size:.86rem;color:#5f7484;line-height:1.5}.empty{padding:22px;text-align:center;color:#617789}
+footer{max-width:1200px;margin:auto;padding:0 20px 28px;color:#6b7e8d;font-size:.8rem}
+@media(max-width:800px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.two{grid-template-columns:1fr}.period{margin-left:0;width:100%}}
+@media(max-width:420px){.grid{grid-template-columns:1fr 1fr;gap:8px}.kpi{padding:12px}.container{padding:12px}.toolbar{padding:12px}select{width:100%}}
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">Епідеміологічний моніторинг</div>
+  <h1>Грип, ГРВІ та COVID-19</h1>
+  <p>Тернопільська область · щотижневий звіт</p>
+</header>
+<main class="container">
+  <section class="toolbar" aria-label="Фільтр звітного періоду">
+    <div><label for="periodSelect">Звітний період</label><select id="periodSelect"></select></div>
+    <div class="period" id="periodLabel" aria-live="polite"></div>
+  </section>
+  <section class="card" aria-labelledby="summaryTitle">
+    <h2 id="summaryTitle">Епідеміологічне зведення</h2>
+    <div class="summary" id="summary" aria-live="polite"></div>
+  </section>
+  <section class="grid" id="kpis" aria-label="Ключові показники"></section>
+  <section class="two">
+    <article class="card"><h2>Структура випадків</h2><div id="structure"></div></article>
+    <article class="card"><h2>Госпіталізації</h2><div id="hospital"></div></article>
+  </section>
+  <section class="two">
+    <article class="card"><h2>COVID-19 та летальні випадки</h2><div id="covid"></div></article>
+    <article class="card"><h2>Лабораторний нагляд</h2><div id="lab"></div></article>
+  </section>
+  <section class="card"><h2>Джерело та примітки</h2><p class="note" id="sourceNote"></p></section>
+</main>
+<footer>Інформаційний інструмент епідеміологічного моніторингу. Перед офіційним використанням перевірте значення за первинним звітом.</footer>
+<script>
+const fmt = n => n == null ? "Немає даних" : new Intl.NumberFormat("uk-UA",{maximumFractionDigits:1}).format(n);
+const pct = n => n == null ? "Немає даних" : (n > 0 ? "+" : "") + fmt(n) + "%";
+const date = s => s ? new Date(s+"T12:00:00").toLocaleDateString("uk-UA",{day:"2-digit",month:"long",year:"numeric"}) : "—";
+const safe = (v, suffix="") => v == null ? "Немає даних" : fmt(v)+suffix;
+function kpi(label,value,note){return '<article class="kpi"><div class="label">'+label+'</div><div class="value">'+value+'</div><div class="note">'+note+'</div></article>'}
+function bar(label,value,max,detail){const width=max>0?Math.max(0,Math.min(100,value/max*100)):0;return '<div class="bar-row"><div class="bar-head"><span>'+label+'</span><strong>'+detail+'</strong></div><div class="track"><div class="bar" style="width:'+width+'%"></div></div></div>'}
+function render(p,meta){
+  const periodLabel='Тиждень '+p.week+' · '+date(p.period_start)+' — '+date(p.period_end);
+  document.getElementById('periodLabel').textContent='Станом на '+date(p.report_date);
+  const delta=p.cases_change_pct==null?'Немає даних для порівняння':pct(p.cases_change_pct)+' до попереднього тижня';
+  const threshold=p.epidemic_threshold_difference_pct==null?'':', на '+fmt(Math.abs(p.epidemic_threshold_difference_pct))+'% нижче епідемічного порога';
+  const schoolShare=p.schoolchildren_share_pct==null?'': ' ('+fmt(p.schoolchildren_share_pct)+'% від кількості хворих дітей)';
+  const lines=[
+    '<p><span class="pill">'+periodLabel+'</span> Звіт станом на '+date(p.report_date)+'.</p>',
+    '<p>Зареєстровано <strong>'+fmt(p.cases_total)+'</strong> випадків грипу та ГРВІ; інтенсивний показник — <strong>'+safe(p.incidence_per_100k,' на 100 тис. населення')+'</strong>'+threshold+'.</p>',
+    '<p>Порівняно з попереднім тижнем захворюваність змінилася на <strong>'+delta+'</strong>'+(p.cases_previous_week!=null?' ('+fmt(p.cases_total)+' проти '+fmt(p.cases_previous_week)+')':'')+'.</p>',
+    '<p>Серед дітей — <strong>'+fmt(p.cases_children)+'</strong> випадків ('+safe(p.children_share_pct,'% від усіх випадків')+'); зміна за тиждень: <strong>'+pct(p.children_change_pct)+'</strong>. Серед школярів — <strong>'+fmt(p.cases_schoolchildren)+'</strong> випадків'+schoolShare+'; тижнева зміна: <strong>'+pct(p.schoolchildren_change_pct)+'</strong>.</p>',
+    '<p>Госпіталізовано <strong>'+fmt(p.hospitalized_total)+'</strong> осіб, з них дітей — <strong>'+fmt(p.hospitalized_children)+'</strong> ('+safe(p.hospitalized_children_share_pct,'%')+'); зміна госпіталізацій: <strong>'+pct(p.hospitalizations_change_pct)+'</strong>.</p>',
+    '<p>COVID-19: <strong>'+fmt(p.covid_cases)+'</strong> випадки'+(p.covid_cases_population==='adults'?' серед дорослих':'')+'. Летальні випадки від грипу/COVID-19: <strong>'+fmt(p.deaths_influenza_covid)+'</strong>.</p>',
+    '<p>Лабораторний нагляд: ПЛР-дослідження проведено для '+fmt(p.pcr_tested)+' пацієнтів; '+(p.pcr_result_summary||'результати не зазначені')+'. Стічні води: '+fmt(p.wastewater_samples_total)+' проб; позитивні результати на SARS-CoV-2 — '+fmt(p.wastewater_sars_cov2_positive)+', на грип A/B — '+fmt(p.wastewater_influenza_ab_positive)+'.</p>'
+  ];
+  document.getElementById('summary').innerHTML=lines.join('');
+  document.getElementById('kpis').innerHTML=[
+    kpi('Випадки грипу та ГРВІ',fmt(p.cases_total),delta),
+    kpi('Інтенсивний показник',safe(p.incidence_per_100k),'на 100 тис. населення'),
+    kpi('Випадки серед дітей',fmt(p.cases_children),safe(p.children_share_pct,'% від усіх випадків')),
+    kpi('Госпіталізовані',fmt(p.hospitalized_total),fmt(p.hospitalized_children)+' дітей')
+  ].join('');
+  document.getElementById('structure').innerHTML=
+    bar('Діти',p.cases_children,p.cases_total,safe(p.children_share_pct,'%'))+
+    bar('Школярі',p.cases_schoolchildren,p.cases_children,safe(p.schoolchildren_share_pct,'% від хворих дітей'))+
+    '<p class="note">Школярі показані як частина дитячих випадків відповідно до знаменника у вихідному звіті.</p>';
+  document.getElementById('hospital').innerHTML=
+    bar('Госпіталізовані діти',p.hospitalized_children,p.hospitalized_total,safe(p.hospitalized_children_share_pct,'%'))+
+    '<p>Усього госпіталізовано: <strong>'+fmt(p.hospitalized_total)+'</strong>.</p>'+
+    '<p class="note">Попередній тиждень: '+fmt(p.hospitalized_previous_week)+'; зміна: '+pct(p.hospitalizations_change_pct)+'.</p>';
+  document.getElementById('covid').innerHTML=
+    '<p>Випадки COVID-19: <strong>'+fmt(p.covid_cases)+'</strong>.</p>'+
+    '<p>Попередній тиждень: <strong>'+fmt(p.covid_cases_previous_week)+'</strong>.</p>'+
+    '<p>Летальні випадки від грипу/COVID-19: <strong>'+fmt(p.deaths_influenza_covid)+'</strong>.</p>';
+  document.getElementById('lab').innerHTML=
+    '<p>ПЛР-тестування: <strong>'+fmt(p.pcr_tested)+'</strong> пацієнтів.</p>'+
+    '<p>'+ (p.pcr_result_summary||'Підсумок результатів відсутній')+'.</p>'+
+    '<p>Проби стічних вод: <strong>'+fmt(p.wastewater_samples_total)+'</strong>; SARS-CoV-2 позитивні: '+fmt(p.wastewater_sars_cov2_positive)+'; грип A/B позитивні: '+fmt(p.wastewater_influenza_ab_positive)+'.</p>';
+  document.getElementById('sourceNote').textContent=meta.source+'. У джерелі доступний один період; історичні графіки не відображаються, доки не буде додано попередні тижні.';
+}
+async function init(){
+  const response=await fetch('/data/weekly.json');
+  if(!response.ok)throw new Error('Не вдалося завантажити дані');
+  const data=await response.json();
+  const periods=[...data.periods].sort((a,b)=>(b.period_end||'').localeCompare(a.period_end||'')||b.year-a.year||b.week-a.week);
+  const select=document.getElementById('periodSelect');
+  periods.forEach(p=>{const option=document.createElement('option');option.value=p.year+'-'+p.week;option.textContent=p.year+' · тиждень '+p.week+' ('+date(p.period_start)+' — '+date(p.period_end)+')';select.appendChild(option)});
+  const byKey=new Map(periods.map(p=>[p.year+'-'+p.week,p]));
+  select.value=periods[0].year+'-'+periods[0].week;
+  const update=()=>render(byKey.get(select.value),data.metadata);
+  select.addEventListener('change',update);
+  update();
+}
+init().catch(error=>{document.getElementById('summary').innerHTML='<p>Не вдалося завантажити дані. Перевірте файл public/data/weekly.json.</p>';console.error(error)});
+</script>
+</body>
+</html>
