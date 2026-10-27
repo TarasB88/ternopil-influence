@@ -535,7 +535,8 @@ document.getElementById('exportXlsx')?.addEventListener('click',()=>{
   const ws=window.XLSX.utils.aoa_to_sheet(rows),wb=window.XLSX.utils.book_new();window.XLSX.utils.book_append_sheet(wb,ws,'Дані');window.XLSX.writeFile(wb,'ternopil-influence-data.xlsx');
 });
 document.getElementById('exportPdf')?.addEventListener('click',()=>window.print());
-\ninit().catch(error=>{document.getElementById('summary').innerHTML='<p>Не вдалося завантажити дані. Перевірте файл public/data/weekly.json.</p>';console.error(error)});
+
+init().catch(error=>{document.getElementById('summary').innerHTML='<p>Не вдалося завантажити дані. Перевірте файл public/data/weekly.json.</p>';console.error(error)});
 </script>
 </body>
 </html>
