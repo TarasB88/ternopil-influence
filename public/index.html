@@ -395,9 +395,27 @@ function normalizeHeader(s){return String(s||'').replace(/^\uFEFF/,'').trim().to
 function parseNumber(v){if(v==null||String(v).trim()===''||['—','-','н/д','немає даних'].includes(String(v).trim().toLocaleLowerCase('uk-UA')))return null;const n=Number(String(v).replace(/\s/g,'').replace(',','.').replace('%',''));return Number.isFinite(n)?n:null;}
 function parseDate(v){if(!v)return null;const s=String(v).trim();let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');m=s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{2,4})$/);if(!m)return null;let y=m[3];if(y.length===2)y='20'+y;return y+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');}
 function parseLegacyWeeklyReport(rows){
-  // A published workbook may repeat the weekly table several times. Parse each
-  // table independently rather than stopping at the first matching header.
-  const isHeader=r=>r.some(v=>/адмінтериторія|адміністративна територія|адміністративно-територіальна одиниця/i.test(String(v||'')))&&r.some(v=>/всього захворіло|усього захворіло/i.test(String(v||'')));
+  // Stable intermediate mapping layer: source headers -> canonical dashboard field keys.
+  // Keep the original Google Sheet headers unchanged to avoid breaking existing formulas.
+  const norm=normalizeHeader;
+  const aliases={
+    territory:[/^адмінтериторія$/, /^адміністративна територія$/, /^адміністративно територіальна одиниця$/, /^територія$/, /^територіальна одиниця$/],
+    cases_total:[/^(?:всього|усього) захворіло(?: на грип та грві)?$/, /^захворіло всього$/, /^грип та грві всього$/],
+    cases_children:[/^діти до 18(?: років)?$/, /^дітей до 18(?: років)?$/, /^в т ч діти$/, /^захворіло дітей$/],
+    age_under_1:[/^до 1(?: року)?$/, /^діти до 1 року$/],
+    age_1_4:[/^1 ?- ?4(?: роки)?$/, /^1-4 роки$/],
+    age_5_9:[/^5 ?- ?9(?: років)?$/, /^5-9 років$/],
+    age_10_14:[/^10 ?- ?14(?: років)?$/, /^10-14 років$/],
+    age_15_17:[/^15 ?- ?17(?: років)?$/, /^15-17 років$/],
+    cases_schoolchildren:[/школяр/],
+    hospitalized_total:[/^госпіталізовано всього$/, /^усього госпіталізовано$/, /^госпіталізовано$/],
+    hospitalized_children:[/^госпіталізовано.*діт/, /^госпіталізовані діти$/],
+    incidence_per_100k:[/інтенсивний показник/, /інт пок/, /на 100 тис/],
+    threshold_low:[/низьк.*(?:рівень|поріг)/, /поріг низької інтенсивності/, /низький поріг/],
+    threshold_medium:[/середн.*(?:рівень|поріг)/, /поріг середньої інтенсивності/],
+    threshold_high:[/висок.*(?:рівень|поріг)/, /поріг високої інтенсивності/]
+  };
+  const isHeader=r=>r.some(v=>/адмінтериторія|адміністративна територія|адміністративно-територіальна одиниця/i.test(String(v||'')))&&r.some(v=>/всього захворіло|усього захворіло|захворіло всього/i.test(String(v||'')));
   const headerIndexes=[];
   rows.forEach((r,i)=>{if(isHeader(r))headerIndexes.push(i);});
   if(!headerIndexes.length)return [];
@@ -405,59 +423,56 @@ function parseLegacyWeeklyReport(rows){
   for(let h=0;h<headerIndexes.length;h++){
     const headerIndex=headerIndexes[h], nextHeader=headerIndexes[h+1]??rows.length;
     const sectionStart=h===0?0:headerIndexes[h-1]+1;
-    const section=rows.slice(sectionStart,headerIndex+1);
-    const title=section.flat().join(' ');
+    const title=rows.slice(sectionStart,headerIndex+1).flat().join(' ');
     const weekMatch=title.match(/(\d{1,2})\s*[-–.]?\s*тиждень/i);
     const dateMatch=title.match(/(\d{1,2})[./](\d{1,2})[./](\d{2,4})\s*(?:р\.?\s*)?(?:по|—|–|-)\s*(\d{1,2})[./](\d{1,2})[./](\d{2,4})/i);
     if(!weekMatch||!dateMatch)continue;
     const startDate=parseDate(dateMatch[1]+'.'+dateMatch[2]+'.'+dateMatch[3]);
     const endDate=parseDate(dateMatch[4]+'.'+dateMatch[5]+'.'+dateMatch[6]);
     if(!startDate||!endDate)continue;
-    const header=rows[headerIndex].map(normalizeHeader);
-    const findHeader=(re,fallback=null)=>{const i=header.findIndex(v=>re.test(v));return i>=0?i:fallback;};
-    const ix={
-      territory:findHeader(/адмінтеритор|адміністративна територія|адміністративно-територіальна одиниця/,1),
-      cases_total:findHeader(/всього захворіло|усього захворіло/,2),
-      cases_children:findHeader(/діти до 18|дітей до 18|в т\.ч\. діти|діти/,3),
-      cases_schoolchildren:findHeader(/шко.?ляр/,9),
-      hospitalized_total:findHeader(/госпіталізовано.*всього|госпіталізовано/,10),
-      hospitalized_children:findHeader(/госпіталізовано.*діти|госпіталізовані діти/,11),
-      incidence_per_100k:findHeader(/інт\.?\s*пок|інтенсивний показник|на 100 тис/,13),
-      threshold:findHeader(/низьк.*рівень|епідемічн.*поріг|порог/,14)
+    const header=rows[headerIndex].map(norm);
+    const findField=field=>{
+      const rules=aliases[field]||[];
+      return header.findIndex(v=>rules.some(re=>re.test(v)));
     };
+    const ix={};
+    for(const field of Object.keys(aliases))ix[field]=findField(field);
     for(const row of rows.slice(headerIndex+1,nextHeader)){
-      const territoryRaw=String(row[ix.territory]||'').trim();
+      const territoryRaw=String(row[ix.territory]??'').trim();
       if(!territoryRaw)continue;
       const territory=normalizeTerritory(territoryRaw);
       const isTotal=/^(?:всього|усього|разом)(?:\s*\(.*\))?\s*:?$/i.test(territoryRaw)||territory==='Тернопільська область';
-      // Keep every named territory found in the source table. The previous
-      // allow-list silently discarded communities and any additional territory rows.
       if(/^(?:адміністративно-територіальна одиниця|адмінтериторія|територія|разом за областю)$/i.test(territoryRaw))continue;
-      if(!isTotal && territory.length<2)continue;
-      const value=i=>i==null?null:parseNumber(row[i]);
-      const casesTotal=value(ix.cases_total);
+      if(!isTotal&&territory.length<2)continue;
+      const value=field=>ix[field]<0?null:parseNumber(row[ix[field]]);
+      const ageValues=['age_under_1','age_1_4','age_5_9','age_10_14','age_15_17'].map(value);
+      const ageSum=ageValues.every(v=>v==null)?null:ageValues.reduce((sum,v)=>sum+(v??0),0);
+      const casesTotal=value('cases_total');
+      const children=value('cases_children')??ageSum;
+      // Never use fixed column positions as fallbacks: shifted source columns could silently corrupt metrics.
       if(casesTotal==null)continue;
-      const children=value(ix.cases_children), schoolchildren=value(ix.cases_schoolchildren);
-      const hospitalized=value(ix.hospitalized_total), hospitalizedChildren=value(ix.hospitalized_children);
-      const incidence=value(ix.incidence_per_100k), threshold=value(ix.threshold);
+      const schoolchildren=value('cases_schoolchildren'), hospitalized=value('hospitalized_total'), hospitalizedChildren=value('hospitalized_children');
+      const incidence=value('incidence_per_100k'), low=value('threshold_low'), medium=value('threshold_medium'), high=value('threshold_high');
       const record={
         year:Number(endDate.slice(0,4)),week:Number(weekMatch[1]),period_start:startDate,period_end:endDate,report_date:endDate,
         territory:isTotal?'Тернопільська область':territory,
         cases_total:casesTotal,cases_children:children,cases_schoolchildren:schoolchildren,
+        cases_age_under_1:value('age_under_1'),cases_age_1_4:value('age_1_4'),cases_age_5_9:value('age_5_9'),cases_age_10_14:value('age_10_14'),cases_age_15_17:value('age_15_17'),
         children_share_pct:children!=null&&casesTotal>0?Math.round(children/casesTotal*1000)/10:null,
         schoolchildren_share_pct:schoolchildren!=null&&children>0?Math.round(schoolchildren/children*1000)/10:null,
         schoolchildren_share_denominator:'cases_children',
         hospitalized_total:hospitalized,hospitalized_children:hospitalizedChildren,
         hospitalized_children_share_pct:hospitalized!=null&&hospitalized>0&&hospitalizedChildren!=null?Math.round(hospitalizedChildren/hospitalized*1000)/10:null,
         incidence_per_100k:incidence,
-        epidemic_threshold_difference_pct:incidence!=null&&threshold!=null&&threshold>0?Math.round((incidence/threshold-1)*1000)/10:null,
+        intensity_low_threshold:low,intensity_medium_threshold:medium,intensity_high_threshold:high,
+        epidemic_threshold_difference_pct:incidence!=null&&low!=null&&low>0?Math.round((incidence/low-1)*1000)/10:null,
         cases_previous_week:null,cases_change_pct:null,children_previous_week:null,children_change_pct:null,
         schoolchildren_previous_week:null,schoolchildren_change_pct:null,hospitalized_previous_week:null,hospitalizations_change_pct:null,
         covid_cases:null,covid_cases_previous_week:null,covid_cases_population:null,deaths_influenza_covid:null,
         pcr_tested:null,pcr_positive:null,pcr_result_summary:null,
         wastewater_samples_total:null,wastewater_sars_cov2_positive:null,wastewater_influenza_ab_positive:null
       };
-      const key=[record.year,record.week,record.territory].join('|');
+      const key=[record.year,record.week,norm(record.territory)].join('|');
       if(!seen.has(key)){seen.add(key);output.push(record);}
     }
   }
