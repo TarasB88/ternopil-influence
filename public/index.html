@@ -250,7 +250,7 @@ function hromadaStyle(feature){
   const selected=document.getElementById('territorySelect')?.value||'Тернопільська область';
   const p=feature.properties||{};
   const districtMatch=selected==='Кременецький район'&&p.ADM2_UA==='Кременецький'||selected==='Чортківський район'&&p.ADM2_UA==='Чортківський'||selected==='Тернопільський район'&&p.ADM2_UA==='Тернопільський';
-  const cityMatch=/тернопіль/i.test(p.ADM3_UA||'')&&/міська/.test(p.ADM3_UA||'');
+  const cityMatch=(p.ADM3_UA||'').trim()==='Тернопільська';
   const highlighted=selected==='Тернопільська область'||districtMatch||(selected==='м. Тернопіль'&&cityMatch);
   return {color:'#5e8194',weight:1,opacity:.9,fillColor:highlighted?'#2d789f':'#d9e7ef',fillOpacity:highlighted?.72:.58};
 }
