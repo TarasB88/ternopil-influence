@@ -26,7 +26,7 @@ footer{max-width:1200px;margin:auto;padding:0 20px 28px;color:#6b7e8d;font-size:
 .public-only{display:block}.expert-only{display:block}
 .donut-row{display:flex;align-items:center;gap:18px;margin:8px 0 18px}.donut{width:132px;height:132px;border-radius:50%;flex:0 0 auto;position:relative;background:conic-gradient(#2679a7 var(--child-share),#b7d8c7 0)}.donut:after{content:"";position:absolute;inset:25px;background:white;border-radius:50%}.donut-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:1;font-weight:800;font-size:1.1rem}.donut-legend{display:grid;gap:8px}.legend-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px}@media print{header,.toolbar,footer,.expert-only,#hromadaMap,.map-legend{display:none!important}body{background:#fff}.container{max-width:none;padding:0}.card,.kpi{box-shadow:none;break-inside:avoid}.public-only{display:block!important}}.status-panel{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.status-chip{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:10px 15px;font-weight:800;background:#e5f6ed;color:#176642}.status-dot{width:12px;height:12px;border-radius:50%;background:#24945f;box-shadow:0 0 0 4px #cceedd}.status-detail{color:#526b7b;line-height:1.5}
 .prevention-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.prevention-item{background:#f4f8fa;border:1px solid #e1ebf0;border-radius:12px;padding:14px}.prevention-item>span{font-size:1.6rem;display:block;margin-bottom:7px}.prevention-item strong{display:block;line-height:1.35}.prevention-item p{font-size:.88rem;color:#607587;margin:7px 0 0;line-height:1.45}
-.table-wrap{overflow:auto;max-width:100%}#expertTable{width:100%;border-collapse:collapse;font-size:.88rem}#expertTable th,#expertTable td{padding:10px;border-bottom:1px solid #e2eaf0;text-align:left;white-space:nowrap}#expertTable th{background:#f0f5f8;color:#35566b;position:sticky;top:0}.export-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+
 @media(max-width:700px){.prevention-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:420px){.prevention-grid{grid-template-columns:1fr}}
 
 @media(max-width:420px){.grid{grid-template-columns:1fr 1fr;gap:8px}.kpi{padding:12px}.container{padding:12px}.toolbar{padding:12px}select{width:100%}}
@@ -155,17 +155,6 @@ function updateNewPanels(p){
     vaccination.innerHTML='<div class="kpi"><div class="label">Щеплено проти грипу за звітний тиждень</div><div class="value">'+displayValue(n)+'</div><div class="note">'+(n===0?'У джерелі вказано підтверджене нульове значення, а не відсутність даних.':n==null?'Дані про вакцинацію не підтверджені для цього звітного періоду.':'осіб за даними джерела')+'</div></div>';
   }
 }
-function renderExpertTable(){
-  const body=document.querySelector('#expertTable tbody'); if(!body)return;
-  const rows=getAllDashboardPeriods().slice().sort((a,b)=>a.year-b.year||a.week-b.week||String(a.territory||'').localeCompare(String(b.territory||''),'uk'));
-  body.innerHTML=rows.map(p=>'<tr><td>'+displayValue(p.year)+' / '+displayValue(p.week)+'</td><td>'+escapeMapText(p.territory||'—')+'</td><td>'+displayValue(p.cases_total)+'</td><td>'+displayValue(p.cases_children)+'</td><td>'+displayValue(p.cases_schoolchildren)+'</td><td>'+displayValue(p.hospitalized_total)+'</td><td>'+displayValue(p.incidence_per_100k)+'</td><td>'+displayValue(p.intensity_low_threshold??p.threshold_low??null)+'</td><td>'+displayValue(p.vaccinated_total??p.vaccination_total??null)+'</td></tr>').join('');
-}
-function exportTableCsv(){
-  const rows=[['Рік','Тиждень','Територія','Випадки','Діти','Школярі','Госпіталізовано','Інтенсивний показник','Епідпоріг','Вакциновано'],...getAllDashboardPeriods().map(p=>[p.year,p.week,p.territory,p.cases_total,p.cases_children,p.cases_schoolchildren,p.hospitalized_total,p.incidence_per_100k,p.intensity_low_threshold??p.threshold_low,p.vaccinated_total??p.vaccination_total])];
-  const csv=String.fromCharCode(65279)+rows.map(r=>r.map(v=>{const x=v==null?'':String(v);return '"'+x.replace(/"/g,'""')+'"';}).join(';')).join(String.fromCharCode(13,10));
-  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='ternopil-influence-data.csv';a.click();URL.revokeObjectURL(a.href);
-}
-
 function render(p,meta){
   window.lastRenderedPeriod=p; window.lastRenderedMeta=meta; updateNewPanels(p);
   document.getElementById('periodLabel').textContent=i18n[currentLanguage].reportAsOf+dateShort(p.report_date);
@@ -626,8 +615,6 @@ async function refreshFromSheets(){
   finally{button.disabled=false;}
 }
 
-document.getElementById('exportCsv')?.addEventListener('click',exportTableCsv);
-document.getElementById('exportPdf')?.addEventListener('click',()=>window.print());
 
 init().catch(error=>{document.getElementById('summary').innerHTML='<p>Не вдалося завантажити дані. Перевірте файл public/data/weekly.json.</p>';console.error(error)});
 </script>
