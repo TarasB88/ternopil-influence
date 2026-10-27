@@ -34,6 +34,7 @@ footer{max-width:1200px;margin:auto;padding:0 20px 28px;color:#6b7e8d;font-size:
 </header>
 <main class="container">
   <section class="toolbar" aria-label="Reporting period and data controls">
+    <div><label for="territorySelect" data-i18n="territory">Територія</label><select id="territorySelect"></select></div>
     <div><label for="periodSelect" data-i18n="period">Звітний період</label><select id="periodSelect"></select></div>
     <button class="action primary" id="refreshButton" type="button" data-i18n="refresh">Оновити з Google Sheets</button>
     <button class="action secondary" id="languageButton" type="button" aria-label="Switch dashboard language">EN</button>
@@ -59,8 +60,8 @@ footer{max-width:1200px;margin:auto;padding:0 20px 28px;color:#6b7e8d;font-size:
 <script>
 let currentLanguage = 'uk';
 const i18n = {
-  uk: {eyebrow:'Епідеміологічний моніторинг',title:'Грип, ГРВІ та COVID-19',subtitle:'Тернопільська область · щотижневий звіт',period:'Звітний період',refresh:'Оновити з Google Sheets',summaryTitle:'Епідситуація із захворюваності на грип, ГРВІ та COVID-19 у Тернопільській області',kpis:'Ключові показники',structureTitle:'Структура випадків',hospitalTitle:'Госпіталізації',covidTitle:'COVID-19 та летальні випадки',labTitle:'Лабораторний нагляд',sourceTitle:'Джерело та примітки',footer:'Інформаційний інструмент епідеміологічного моніторингу. Перед офіційним використанням перевірте значення за первинним звітом.',loading:'Завантаження онлайн-таблиці…',liveOk:'Дані отримано з Google Sheets. Перевіряю структуру колонок…',mapped:'Дашборд оновлено з Google Sheets.',mappingFailed:'Таблицю отримано, але автоматичне зіставлення колонок не підтверджено. Показано локальні дані. Заголовки: ',refreshFailed:'Не вдалося отримати онлайн-таблицю. Перевірте публікацію Google Sheets або з’єднання.',lastRefresh:'Остання перевірка джерела: ',noData:'Немає даних',week:'Тиждень',reportAsOf:'Станом на '},
-  en: {eyebrow:'Epidemiological surveillance',title:'Influenza, ARI and COVID-19',subtitle:'Ternopil Oblast · weekly report',period:'Reporting period',refresh:'Refresh from Google Sheets',summaryTitle:'Influenza, ARI and COVID-19 epidemiological situation in Ternopil Oblast',kpis:'Key indicators',structureTitle:'Case breakdown',hospitalTitle:'Hospitalizations',covidTitle:'COVID-19 and deaths',labTitle:'Laboratory surveillance',sourceTitle:'Source and notes',footer:'Epidemiological surveillance information tool. Verify values against the primary report before official use.',loading:'Loading online spreadsheet…',liveOk:'Online data received from Google Sheets. Checking column structure…',mapped:'Dashboard updated from Google Sheets.',mappingFailed:'Spreadsheet received, but column mapping could not be verified. Local data remain displayed. Headers: ',refreshFailed:'Could not retrieve the online spreadsheet. Check Google Sheets publishing or connection.',lastRefresh:'Last source check: ',noData:'No data',week:'Week',reportAsOf:'As of '}
+  uk: {eyebrow:'Епідеміологічний моніторинг',title:'Грип, ГРВІ та COVID-19',subtitle:'Тернопільська область · щотижневий звіт',territory:'Територія',period:'Звітний тиждень',refresh:'Оновити з Google Sheets',summaryTitle:'Епідситуація із захворюваності на грип, ГРВІ та COVID-19 у Тернопільській області',kpis:'Ключові показники',structureTitle:'Структура випадків',hospitalTitle:'Госпіталізації',covidTitle:'COVID-19 та летальні випадки',labTitle:'Лабораторний нагляд',sourceTitle:'Джерело та примітки',footer:'Інформаційний інструмент епідеміологічного моніторингу. Перед офіційним використанням перевірте значення за первинним звітом.',loading:'Завантаження онлайн-таблиці…',liveOk:'Дані отримано з Google Sheets. Перевіряю структуру колонок…',mapped:'Дашборд оновлено з Google Sheets.',mappingFailed:'Таблицю отримано, але автоматичне зіставлення колонок не підтверджено. Показано локальні дані. Заголовки: ',refreshFailed:'Не вдалося отримати онлайн-таблицю. Перевірте публікацію Google Sheets або з’єднання.',lastRefresh:'Остання перевірка джерела: ',noData:'Немає даних',week:'Тиждень',reportAsOf:'Станом на '},
+  en: {eyebrow:'Epidemiological surveillance',title:'Influenza, ARI and COVID-19',subtitle:'Ternopil Oblast · weekly report',territory:'Territory',period:'Reporting week',refresh:'Refresh from Google Sheets',summaryTitle:'Influenza, ARI and COVID-19 epidemiological situation in Ternopil Oblast',kpis:'Key indicators',structureTitle:'Case breakdown',hospitalTitle:'Hospitalizations',covidTitle:'COVID-19 and deaths',labTitle:'Laboratory surveillance',sourceTitle:'Source and notes',footer:'Epidemiological surveillance information tool. Verify values against the primary report before official use.',loading:'Loading online spreadsheet…',liveOk:'Online data received from Google Sheets. Checking column structure…',mapped:'Dashboard updated from Google Sheets.',mappingFailed:'Spreadsheet received, but column mapping could not be verified. Local data remain displayed. Headers: ',refreshFailed:'Could not retrieve the online spreadsheet. Check Google Sheets publishing or connection.',lastRefresh:'Last source check: ',noData:'No data',week:'Week',reportAsOf:'As of '}
 };
 function setLanguage(lang) {
   currentLanguage = lang;
@@ -150,21 +151,50 @@ function render(p,meta){
     '<p>Проби стічних вод: <strong>'+fmt(p.wastewater_samples_total)+'</strong>; SARS-CoV-2 позитивні: '+fmt(p.wastewater_sars_cov2_positive)+'; грип A/B позитивні: '+fmt(p.wastewater_influenza_ab_positive)+'.</p>';
   document.getElementById('sourceNote').textContent=meta.source+'. У джерелі доступний один період; історичні графіки не відображаються, доки не буде додано попередні тижні.';
 }
+function normalizeTerritory(value){
+  const raw=String(value||'').trim().replace(/\\s+/g,' ');
+  if(!raw) return 'Тернопільська область';
+  const low=raw.toLocaleLowerCase('uk-UA');
+  if(['тернопільська область','тернопільська обл.','тернопільська обл','тернопільщина','ternopil oblast'].includes(low)) return 'Тернопільська область';
+  return raw;
+}
+function periodKey(p){return String(Number(p.year))+'-'+String(Number(p.week)).padStart(2,'0');}
+function uniquePeriodsForTerritory(periods,territory){
+  const filtered=periods.filter(p=>normalizeTerritory(p.territory)===territory);
+  const seen=new Set();
+  return filtered.sort((a,b)=>(b.period_end||'').localeCompare(a.period_end||'')||b.year-a.year||b.week-a.week)
+    .filter(p=>{const key=periodKey(p);if(seen.has(key))return false;seen.add(key);return true;});
+}
+function refreshPeriodOptions(preferredKey){
+  const all=(window.liveSheetData||window.initialDashboardData).periods;
+  const territory=document.getElementById('territorySelect').value||'Тернопільська область';
+  const periods=uniquePeriodsForTerritory(all,territory);
+  const select=document.getElementById('periodSelect');select.innerHTML='';
+  periods.forEach(p=>{const o=document.createElement('option');o.value=periodKey(p);o.textContent=p.year+' · '+i18n[currentLanguage].week+' '+p.week+(p.period_start&&p.period_end?' ('+date(p.period_start)+' — '+date(p.period_end)+')':'');select.appendChild(o);});
+  if(!periods.length){document.getElementById('summary').innerHTML='<p>'+i18n[currentLanguage].noData+'</p>';document.getElementById('kpis').innerHTML='';document.getElementById('structure').innerHTML='';document.getElementById('hospital').innerHTML='';document.getElementById('covid').innerHTML='';document.getElementById('lab').innerHTML='';return;}
+  const chosen=periods.find(p=>periodKey(p)===preferredKey)||periods[0];
+  select.value=periodKey(chosen);
+  const data=window.liveSheetData||window.initialDashboardData;
+  select.onchange=()=>{const selected=periods.find(p=>periodKey(p)===select.value);if(selected)render(selected,data.metadata);};
+  render(chosen,data.metadata);
+}
 async function init(){
   const response=await fetch('/data/weekly.json');
   if(!response.ok)throw new Error('Не вдалося завантажити дані');
   const data=await response.json();
-  const periods=[...data.periods].sort((a,b)=>(b.period_end||'').localeCompare(a.period_end||'')||b.year-a.year||b.week-a.week);
-  const select=document.getElementById('periodSelect');
-  periods.forEach(p=>{const option=document.createElement('option');option.value=p.year+'-'+p.week;option.textContent=p.year+' · '+i18n[currentLanguage].week+' '+p.week+' ('+date(p.period_start)+' — '+date(p.period_end)+')';select.appendChild(option)});
-  const byKey=new Map(periods.map(p=>[p.year+'-'+p.week,p]));
-  select.value=periods[0].year+'-'+periods[0].week;
-  const update=()=>render(byKey.get(select.value),data.metadata);
-  select.addEventListener('change',update);
-  update();
+  data.periods=(data.periods||[]).map(p=>({...p,territory:normalizeTerritory(p.territory||'Тернопільська область')}));
+  window.initialDashboardData=data;window.liveSheetData=data;
+  const territories=[...new Set(data.periods.map(p=>normalizeTerritory(p.territory)))];
+  if(!territories.includes('Тернопільська область'))territories.unshift('Тернопільська область');
+  const territorySelect=document.getElementById('territorySelect');
+  territorySelect.innerHTML='';
+  territories.sort((a,b)=>a==='Тернопільська область'?-1:b==='Тернопільська область'?1:a.localeCompare(b,'uk'));
+  territories.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;territorySelect.appendChild(o);});
+  territorySelect.value='Тернопільська область';
+  territorySelect.addEventListener('change',()=>refreshPeriodOptions(document.getElementById('periodSelect').value));
+  refreshPeriodOptions();
   document.getElementById('languageButton').addEventListener('click',()=>setLanguage(currentLanguage==='uk'?'en':'uk'));
   document.getElementById('refreshButton').addEventListener('click',refreshFromSheets);
-  // Automatically check the online source on each page load, not only on button click.
   refreshFromSheets();
 }
 function parseCSV(text) {
@@ -180,8 +210,8 @@ function parseCSV(text) {
   return rows;
 }
 const headerAliases = {
-  year:['Рік','Звітний рік','year'], week:['Тиждень','Звітний тиждень','Епідемічний тиждень','№ тижня','week'],
   cases_total:['Захворіло всього','Усього захворіло','Всього випадків','Кількість захворілих','Грип та ГРВІ всього','cases_total'],
+  territory:['Територія','Територіальна одиниця','Область','Регіон','Територія звіту','Назва території','Адміністративно-територіальна одиниця','territory','region','oblast'], year:['Рік','Звітний рік','year'], week:['Тиждень','Звітний тиждень','Епідемічний тиждень','№ тижня','week'],
   period_start:['Початок періоду','Дата початку','Період з','period_start'], period_end:['Кінець періоду','Дата завершення','Період по','period_end'],
   report_date:['Дата звіту','Станом на','Дата оновлення','report_date'], incidence_per_100k:['Інтенсивний показник','Захворюваність на 100 тис.','На 100 тис. населення','incidence_per_100k'],
   epidemic_threshold_difference_pct:['Відхилення від епідпорогу, %','Відхилення від епідемічного порогу','epidemic_threshold_difference_pct'],
@@ -214,7 +244,7 @@ async function refreshFromSheets(){
       columns[field]=headers.findIndex(h=>normalized.includes(h));
     }
     const mapped=rows.slice(1).map(row=>{
-      const obj={};for(const [field,index] of Object.entries(columns)){if(index>=0)obj[field]=['pcr_result_summary'].includes(field)?(row[index]||null):parseNumber(row[index]);}
+      const obj={};for(const [field,index] of Object.entries(columns)){if(index>=0)obj[field]=field==='pcr_result_summary'?(row[index]||null):field==='territory'?normalizeTerritory(row[index]):parseNumber(row[index]);} obj.territory=normalizeTerritory(obj.territory);
       obj.year=obj.year??null;obj.week=obj.week??null;
       obj.period_start=parseDate(columns.period_start>=0?row[columns.period_start]:'')||null;
       obj.period_end=parseDate(columns.period_end>=0?row[columns.period_end]:'')||null;
@@ -224,12 +254,17 @@ async function refreshFromSheets(){
       if(obj.year!=null&&obj.week!=null&&obj.cases_total!=null){obj.year=Number(obj.year);obj.week=Number(obj.week);return obj;}return null;
     }).filter(Boolean);
     if(mapped.length){
-      const data={periods:mapped,metadata:{source:'Google Sheets · '+new Date().toLocaleString(currentLanguage==='uk'?'uk-UA':'en-GB')}};
-      const select=document.getElementById('periodSelect');select.innerHTML='';
-      mapped.sort((a,b)=>(b.period_end||'').localeCompare(a.period_end||'')||b.year-a.year||b.week-a.week);
-      mapped.forEach(p=>{const o=document.createElement('option');o.value=p.year+'-'+p.week;o.textContent=p.year+' · '+i18n[currentLanguage].week+' '+p.week+' ('+date(p.period_start)+' — '+date(p.period_end)+')';select.appendChild(o);});
-      const byKey=new Map(mapped.map(p=>[p.year+'-'+p.week,p]));select.value=mapped[0].year+'-'+mapped[0].week;
-      select.onchange=()=>render(byKey.get(select.value),data.metadata);window.liveSheetData=data;render(mapped[0],data.metadata);
+      const data={periods:mapped.map(p=>({...p,territory:normalizeTerritory(p.territory)})),metadata:{source:'Google Sheets · '+new Date().toLocaleString(currentLanguage==='uk'?'uk-UA':'en-GB')}};
+      window.liveSheetData=data;
+      const territorySelect=document.getElementById('territorySelect');
+      const previousTerritory=territorySelect.value||'Тернопільська область';
+      const territories=[...new Set(data.periods.map(p=>normalizeTerritory(p.territory)))];
+      if(!territories.includes('Тернопільська область'))territories.unshift('Тернопільська область');
+      territories.sort((a,b)=>a==='Тернопільська область'?-1:b==='Тернопільська область'?1:a.localeCompare(b,'uk'));
+      territorySelect.innerHTML='';
+      territories.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;territorySelect.appendChild(o);});
+      territorySelect.value=territories.includes(previousTerritory)?previousTerritory:'Тернопільська область';
+      refreshPeriodOptions();
       window.lastSourceStatus=i18n[currentLanguage].mapped+' '+i18n[currentLanguage].lastRefresh+new Date().toLocaleTimeString(currentLanguage==='uk'?'uk-UA':'en-GB');
       status.textContent=window.lastSourceStatus;
     }else{
