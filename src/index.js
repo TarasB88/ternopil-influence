@@ -22,9 +22,14 @@ export default {
     // Live CSV proxy: keeps browser requests same-origin and avoids CORS issues.
     if (url.pathname === "/api/source") {
       try {
-        const upstream = await fetch(SOURCE_CSV_URL, {
-          headers: { "Accept": "text/csv,text/plain;q=0.9,*/*;q=0.8" },
-          cf: { cacheTtl: 300, cacheEverything: true }
+        const sourceUrl = new URL(SOURCE_CSV_URL);
+        sourceUrl.searchParams.set("refresh", String(Date.now()));
+        const upstream = await fetch(sourceUrl.toString(), {
+          headers: {
+            "Accept": "text/csv,text/plain;q=0.9,*/*;q=0.8",
+            "Cache-Control": "no-cache"
+          },
+          cache: "no-store"
         });
         if (!upstream.ok) {
           return Response.json({
