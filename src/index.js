@@ -1,4 +1,9 @@
-const SOURCE_CSV_URL = "https://docs.google.com/spreadsheets/d/1Oxri7kz6UMFpkTENTjoQUHwY5yCuhczJY22c0K5fqbI/export?format=csv&gid=1951237247";
+const LEGACY_SOURCE_CSV_URL = "https://docs.google.com/spreadsheets/d/1Oxri7kz6UMFpkTENTjoQUHwY5yCuhczJY22c0K5fqbI/export?format=csv&gid=1951237247";
+
+const SOURCE_CONFIG = {
+  "/api/respiratory": "RESPIRATORY_CSV_URL",
+  "/api/vaccination": "VACCINATION_CSV_URL"
+};
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,10 +24,22 @@ export default {
       }, { headers: corsHeaders });
     }
 
-    // Live CSV proxy: keeps browser requests same-origin and avoids CORS issues.
-    if (url.pathname === "/api/source") {
+    // New two-sheet integration is configured with Worker variables:
+    // RESPIRATORY_CSV_URL and VACCINATION_CSV_URL. URLs must be published CSV exports.
+    const configuredKey = SOURCE_CONFIG[url.pathname];
+    if (configuredKey && !env[configuredKey]) {
+      return Response.json({
+        status: "not_configured",
+        message: "Set the " + configuredKey + " Worker variable to the published CSV URL for the matching sheet.",
+        checkedAt: new Date().toISOString()
+      }, { status: 503, headers: corsHeaders });
+    }
+
+    // Keep the legacy endpoint during migration; it is not the new two-sheet source.
+    if (url.pathname === "/api/source" || configuredKey) {
       try {
-        const sourceUrl = new URL(SOURCE_CSV_URL);
+        const configuredUrl = configuredKey ? env[configuredKey] : LEGACY_SOURCE_CSV_URL;
+        const sourceUrl = new URL(configuredUrl);
         sourceUrl.searchParams.set("refresh", String(Date.now()));
         const upstream = await fetch(sourceUrl.toString(), {
           headers: {
@@ -53,7 +70,7 @@ export default {
           headers: {
             ...corsHeaders,
             "Content-Type": "text/csv; charset=utf-8",
-            "X-Data-Source": "Google Sheets",
+            "X-Data-Source": configuredKey || "Google Sheets legacy source",
             "X-Source-Checked-At": new Date().toISOString()
           }
         });
