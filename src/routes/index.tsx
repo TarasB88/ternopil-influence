@@ -129,8 +129,6 @@ function Dashboard() {
 
         <Kpis focus={focus} prev={prevFocus} prevWeek={prevWeek} label={territory ?? "Уся область"} />
 
-        <DistrictMap rows={terr} selected={territory} onSelect={setTerritory} />
-
         <div className="grid gap-6 lg:grid-cols-5">
           <Card className="lg:col-span-3" title="Випадки за територіями" sub="Клікніть стовпчик, щоб відфільтрувати. Підсумок не входить до ранжування.">
             <ResponsiveContainer width="100%" height={260}>
@@ -173,11 +171,7 @@ function Dashboard() {
 
         <Vaccination rows={data.vaccination} week={week} />
 
-        <Card title="Таблиця даних" sub="Усі поля аркуша weekly_respiratory · пошук, сортування, експорт">
-          <DataTable rows={data.respiratory} />
-        </Card>
-
-        <QualityNotes />
+<QualityNotes />
         <footer className="pb-6 text-center text-xs text-muted-foreground">
           Джерело: Google Sheets (weekly_respiratory, weekly_vaccination) · оновлено {new Date(data.fetchedAt).toLocaleString("uk-UA")}
         </footer>
