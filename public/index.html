@@ -233,7 +233,7 @@ async function refreshFromSheets(){
       window.lastSourceStatus=i18n[currentLanguage].mapped+' '+i18n[currentLanguage].lastRefresh+new Date().toLocaleTimeString(currentLanguage==='uk'?'uk-UA':'en-GB');
       status.textContent=window.lastSourceStatus;
     }else{
-      window.lastSourceStatus=i18n[currentLanguage].mappingFailed+rows[0].slice(0,12).join(' | ');
+      window.lastSourceStatus=i18n[currentLanguage].mappingFailed+rows[0].slice(0,12).join(' | ')+'; sample: '+(rows[1]||[]).slice(0,12).join(' | ');
       status.textContent=window.lastSourceStatus;
     }
   }catch(e){window.lastSourceStatus=i18n[currentLanguage].refreshFailed;status.textContent=window.lastSourceStatus;console.error(e);}
