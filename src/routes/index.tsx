@@ -216,7 +216,7 @@ function DistrictMap({ rows, selected, onSelect }: { rows: Row[]; selected: stri
       .then((r) => { if (!r.ok) throw new Error("GeoJSON unavailable"); return r.json(); })
       .then((data: { features?: GeoFeature[] }) => {
         if (!active) return;
-        const wanted = ["кременецький", "тернопільський", "чортківський"];
+        const wanted = ["кременецький", "тернопільський", "чортківський", "kremenets", "ternopil", "chortkiv"];
         const found = (data.features ?? []).filter((f) => {
           const props = Object.values(f.properties ?? {}).filter((v) => typeof v === "string").join(" ").toLocaleLowerCase("uk-UA");
           return wanted.some((n) => props.includes(n)) && !!f.geometry;
@@ -268,10 +268,10 @@ function DistrictMap({ rows, selected, onSelect }: { rows: Row[]; selected: stri
     walk(coordinates);
     return paths.join(" ");
   };
-  const featureLabel = (f: GeoFeature) => Object.values(f.properties ?? {}).find((v) => typeof v === "string" && ["кременецький", "тернопільський", "чортківський"].some((n) => v.toLocaleLowerCase("uk-UA").includes(n))) as string | undefined;
+  const featureLabel = (f: GeoFeature) => Object.values(f.properties ?? {}).find((v) => typeof v === "string" && ["кременецький", "тернопільський", "чортківський", "kremenets", "ternopil", "chortkiv"].some((n) => v.toLocaleLowerCase("uk-UA").includes(n))) as string | undefined;
   const getFeatureGroup = (f: GeoFeature) => {
     const label = (featureLabel(f) ?? Object.values(f.properties ?? {}).join(" ")).toLocaleLowerCase("uk-UA");
-    return selectedRows.find((d) => label.includes(d.key));
+    return selectedRows.find((d) => label.includes(d.key) || (d.key === "кременецький" && label.includes("kremenets")) || (d.key === "тернопільський" && label.includes("ternopil")) || (d.key === "чортківський" && label.includes("chortkiv")));
   };
   const cityPoint = project([25.5948, 49.5535]);
   const citySelected = !!selected && !!cityRow && selected === cityRow.administrative_territory;
