@@ -276,8 +276,35 @@ function DistrictMap({ rows, selected, onSelect }: { rows: Row[]; selected: stri
   const cityPoint = project([25.5948, 49.5535]);
   const citySelected = !!selected && !!cityRow && selected === cityRow.administrative_territory;
 
+  // If the source has no explicit epidemiological thresholds, use a transparent
+  // fallback scale based on incidence per 100,000 so polygons still show the indicator.
+  const mapLevel = (row: Row | undefined): Level => {
+    if (!row) return "nodata";
+    const incidence = num(row.incidence_per_100k);
+    if (incidence === null) return "nodata";
+    const low = num(row.intensity_low_threshold);
+    const medium = num(row.intensity_medium_threshold);
+    const high = num(row.intensity_high_threshold);
+    if (low !== null && medium !== null && high !== null) return intensityLevel(row);
+    if (incidence >= 1000) return "high";
+    if (incidence >= 500) return "medium";
+    if (incidence > 0) return "low";
+    return "below";
+  };
+  const mapFill = (row: Row | undefined) => {
+    const level = mapLevel(row);
+    const colors: Record<Level, string> = {
+      below: "#d9f0e3",
+      low: "#91cfb0",
+      medium: "#f6c85f",
+      high: "#d95f59",
+      nodata: "#d1d5db",
+    };
+    return colors[level];
+  };
+
   return (
-    <Card title="Карта епідемічної ситуації за районами та м. Тернопіль" sub="Окремий блок · межі районів за відкритими GeoJSON-даними · виберіть територію для фільтрації показників">
+    <Card title="Карта епідемічної ситуації за районами та м. Тернопіль" sub="Колір показує захворюваність на 100 тис. населення; натисніть район для фільтрації.">
       {geoError ? (
         <p className="text-sm text-muted-foreground">Не вдалося завантажити географічні межі. Перевірте підключення до джерела GeoJSON.</p>
       ) : features.length === 0 ? (
@@ -285,17 +312,17 @@ function DistrictMap({ rows, selected, onSelect }: { rows: Row[]; selected: stri
       ) : (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(220px,1fr)]">
           <div className="min-w-0 overflow-hidden rounded-lg border bg-muted/20">
-            <svg viewBox="0 0 900 560" role="img" aria-label="Карта Кременецького, Тернопільського, Чортківського районів і міста Тернополя" className="h-auto w-full">
+            <svg viewBox="0 0 900 560" role="img" aria-label="Карта Кременецького, Тернопільського, Чортківського районів і міста Тернополя" className="mx-auto h-auto max-h-[340px] w-full max-w-[560px]">
               {features.map((f, i) => {
                 const group = getFeatureGroup(f);
                 const row = group ? findRow(group.aliases) : undefined;
-                const level = row ? intensityLevel(row) : "nodata";
-                const fill = row ? LEVEL_COLOR[level] : "var(--muted-foreground)";
-                return <path key={i} d={ringsToPath(f.geometry?.coordinates)} fill={fill} fillOpacity={selected && group && !group.aliases.some((a) => selected.toLocaleLowerCase("uk-UA").includes(a)) ? 0.28 : 0.65} stroke="var(--border)" strokeWidth="1.8" vectorEffect="non-scaling-stroke" className="cursor-pointer transition-opacity hover:opacity-90" onClick={() => group && row && onSelect(selected === row.administrative_territory ? null : row.administrative_territory ?? null)}><title>{group?.label ?? featureLabel(f) ?? "Район"} · {row ? fmt(num(row.cases_total)) + " випадків; " + fmt(num(row.incidence_per_100k), 1) + " на 100 тис." : "немає відповідного рядка даних"}</title></path>;
+                const level = mapLevel(row);
+                const fill = mapFill(row);
+                return <path key={i} d={ringsToPath(f.geometry?.coordinates)} fill={fill} fillOpacity={selected && group && !group.aliases.some((a) => selected.toLocaleLowerCase("uk-UA").includes(a)) ? 0.35 : 0.88} stroke="var(--border)" strokeWidth="1.8" vectorEffect="non-scaling-stroke" className="cursor-pointer transition-opacity hover:opacity-90" onClick={() => group && row && onSelect(selected === row.administrative_territory ? null : row.administrative_territory ?? null)}><title>{group?.label ?? featureLabel(f) ?? "Район"} · {row ? fmt(num(row.cases_total)) + " випадків; " + fmt(num(row.incidence_per_100k), 1) + " на 100 тис." : "немає відповідного рядка даних"}</title></path>;
               })}
               <line x1={cityPoint[0] - 7} y1={cityPoint[1]} x2={cityPoint[0] + 7} y2={cityPoint[1]} stroke="var(--foreground)" strokeWidth="2.5" />
               <line x1={cityPoint[0]} y1={cityPoint[1] - 7} x2={cityPoint[0]} y2={cityPoint[1] + 7} stroke="var(--foreground)" strokeWidth="2.5" />
-              <circle cx={cityPoint[0]} cy={cityPoint[1]} r="5" fill={cityRow ? LEVEL_COLOR[intensityLevel(cityRow)] : "var(--primary)"} stroke="var(--background)" strokeWidth="2" />
+              <circle cx={cityPoint[0]} cy={cityPoint[1]} r="5" fill={mapFill(cityRow)} stroke="var(--background)" strokeWidth="2" />
               <text x={cityPoint[0] + 10} y={cityPoint[1] - 10} fontSize="15" fontWeight="700" fill="var(--foreground)" stroke="var(--background)" strokeWidth="3" paintOrder="stroke">м. Тернопіль</text>
             </svg>
           </div>
@@ -304,15 +331,15 @@ function DistrictMap({ rows, selected, onSelect }: { rows: Row[]; selected: stri
               const row = findRow(group.aliases);
               const active = !!row && selected === row.administrative_territory;
               return <button key={group.key} onClick={() => row && onSelect(active ? null : row.administrative_territory ?? null)} className={`w-full rounded-lg border p-3 text-left transition-colors hover:bg-muted/60 ${active ? "border-primary bg-accent" : "bg-card"}`}>
-                <div className="flex items-center gap-2 text-sm font-semibold"><span className="h-3 w-3 shrink-0 rounded-sm" style={{ background: row ? LEVEL_COLOR[intensityLevel(row)] : group.color }} />{group.label}</div>
+                <div className="flex items-center gap-2 text-sm font-semibold"><span className="h-3 w-3 shrink-0 rounded-sm" style={{ background: mapFill(row) }} />{group.label}</div>
                 <div className="mt-2 grid grid-cols-2 gap-2 text-xs"><span className="text-muted-foreground">Випадки</span><strong className="text-right">{fmt(num(row?.cases_total))}</strong><span className="text-muted-foreground">На 100 тис.</span><strong className="text-right">{fmt(num(row?.incidence_per_100k), 1)}</strong><span className="text-muted-foreground">Рівень</span><span className="text-right">{row ? levelLabel[intensityLevel(row)] : "Немає даних"}</span></div>
               </button>;
             })}
             <button onClick={() => cityRow && onSelect(citySelected ? null : cityRow.administrative_territory ?? null)} className={`w-full rounded-lg border p-3 text-left transition-colors hover:bg-muted/60 ${citySelected ? "border-primary bg-accent" : "bg-card"}`}>
-              <div className="flex items-center gap-2 text-sm font-semibold"><span className="h-3 w-3 shrink-0 rounded-full" style={{ background: cityRow ? LEVEL_COLOR[intensityLevel(cityRow)] : "var(--primary)" }} />м. Тернопіль</div>
+              <div className="flex items-center gap-2 text-sm font-semibold"><span className="h-3 w-3 shrink-0 rounded-full" style={{ background: mapFill(cityRow) }} />м. Тернопіль</div>
               <div className="mt-2 grid grid-cols-2 gap-2 text-xs"><span className="text-muted-foreground">Випадки</span><strong className="text-right">{fmt(num(cityRow?.cases_total))}</strong><span className="text-muted-foreground">На 100 тис.</span><strong className="text-right">{fmt(num(cityRow?.incidence_per_100k), 1)}</strong><span className="text-muted-foreground">Рівень</span><span className="text-right">{cityRow ? levelLabel[intensityLevel(cityRow)] : "Немає окремого рядка"}</span></div>
             </button>
-            <p className="text-xs text-muted-foreground">Колір відображає інтенсивність лише за наявності порогів у джерелі. Дані карти відповідають вибраному тижню.</p>
+            <div className="rounded-md border p-3"><p className="mb-2 text-xs font-semibold">Захворюваність на 100 тис. населення</p><div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs"><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#d9f0e3"}} />0 / нижче порогу</span><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#91cfb0"}} />Низька</span><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#f6c85f"}} />Середня</span><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#d95f59"}} />Висока</span><span className="col-span-2 flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#d1d5db"}} />Немає значення показника</span></div><p className="mt-2 text-[11px] text-muted-foreground">Якщо в таблиці є офіційні пороги інтенсивності, використовуються вони; інакше застосовано технічну шкалу: &lt;500, 500–999, ≥1000 на 100 тис.</p></div>
             <p className="text-xs text-muted-foreground">Геодані: <a className="underline" href="https://github.com/slawomirmatuszak/ukrainian_geodata" target="_blank" rel="noreferrer">Ukrainian geodata (CC BY 4.0)</a>. Маркер міста — координати центру Тернополя; це не адміністративний контур міста.</p>
           </div>
         </div>
