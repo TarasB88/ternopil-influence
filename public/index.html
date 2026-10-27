@@ -279,29 +279,39 @@ function enrichDashboardPeriods(periods){
   const byTerritory=new Map();
   for(const p of rows){const key=p.territory||'Тернопільська область';if(!byTerritory.has(key))byTerritory.set(key,[]);byTerritory.get(key).push(p);}
   const pct=(num,den)=>Number.isFinite(num)&&Number.isFinite(den)&&den>0?Math.round(num/den*1000)/10:null;
+  const change=(now,before)=>Number.isFinite(now)&&Number.isFinite(before)&&before>0?Math.round((now-before)/before*1000)/10:null;
+  const finite=v=>typeof v==='number'&&Number.isFinite(v);
+  const ageFields=['cases_age_under_1','cases_age_1_4','cases_age_5_9','cases_age_10_14','cases_age_15_17'];
   for(const list of byTerritory.values()){
-    list.sort((a,b)=>(Number(a.year)||0)-(Number(b.year)||0)||(Number(a.week)||0)-(Number(b.week)||0));
+    list.sort((a,b)=>(a.period_end||'').localeCompare(b.period_end||'')||(Number(a.year)||0)-(Number(b.year)||0)||(Number(a.week)||0)-(Number(b.week)||0));
     for(let i=0;i<list.length;i++){
-      const p=list[i],prev=list[i-1];
-      // Derive percentages only when the required numerator and denominator exist.
+      const p=list[i];
+      // Reconstruct the child total only if every age band is present.
+      if(p.cases_children==null&&ageFields.every(k=>finite(p[k])))p.cases_children=ageFields.reduce((sum,k)=>sum+p[k],0);
+      // Derive indicators only from known, compatible source values.
       if(p.children_share_pct==null)p.children_share_pct=pct(p.cases_children,p.cases_total);
       if(p.schoolchildren_share_pct==null)p.schoolchildren_share_pct=pct(p.cases_schoolchildren,p.cases_children);
       if(p.hospitalized_children_share_pct==null)p.hospitalized_children_share_pct=pct(p.hospitalized_children,p.hospitalized_total);
-      // Age bands are a subset of children; use them only when all five values are present.
-      const ageFields=['cases_age_under_1','cases_age_1_4','cases_age_5_9','cases_age_10_14','cases_age_15_17'];
-      if(p.cases_children==null&&ageFields.every(k=>Number.isFinite(p[k])))p.cases_children=ageFields.reduce((sum,k)=>sum+p[k],0);
-      if(prev){
-        const change=(now,before)=>Number.isFinite(now)&&Number.isFinite(before)&&before>0?Math.round((now-before)/before*1000)/10:null;
-        if(p.cases_previous_week==null&&Number.isFinite(prev.cases_total))p.cases_previous_week=prev.cases_total;
-        if(p.children_previous_week==null&&Number.isFinite(prev.cases_children))p.children_previous_week=prev.cases_children;
-        if(p.schoolchildren_previous_week==null&&Number.isFinite(prev.cases_schoolchildren))p.schoolchildren_previous_week=prev.cases_schoolchildren;
-        if(p.hospitalized_previous_week==null&&Number.isFinite(prev.hospitalized_total))p.hospitalized_previous_week=prev.hospitalized_total;
-        if(p.covid_cases_previous_week==null&&Number.isFinite(prev.covid_cases))p.covid_cases_previous_week=prev.covid_cases;
-        if(p.cases_change_pct==null)p.cases_change_pct=change(p.cases_total,p.cases_previous_week);
-        if(p.children_change_pct==null)p.children_change_pct=change(p.cases_children,p.children_previous_week);
-        if(p.schoolchildren_change_pct==null)p.schoolchildren_change_pct=change(p.cases_schoolchildren,p.schoolchildren_previous_week);
-        if(p.hospitalizations_change_pct==null)p.hospitalizations_change_pct=change(p.hospitalized_total,p.hospitalized_previous_week);
+      if(p.incidence_per_100k==null&&finite(p.population_total)&&p.population_total>0&&finite(p.cases_total))p.incidence_per_100k=Math.round(p.cases_total/p.population_total*1000000)/10;
+      const low=p.intensity_low_threshold??p.threshold_low;
+      if(p.epidemic_threshold_difference_pct==null&&finite(p.incidence_per_100k)&&finite(low)&&low>0)p.epidemic_threshold_difference_pct=Math.round((p.incidence_per_100k-low)/low*10000)/100;
+      const prev=list[i-1];
+      // Only compare truly consecutive reporting periods; do not compare across gaps.
+      const endA=Date.parse(String(p.period_end||'')+'T12:00:00Z');
+      const endB=prev?Date.parse(String(prev.period_end||'')+'T12:00:00Z'):NaN;
+      const consecutive=prev&&Number.isFinite(endA)&&Number.isFinite(endB)&&Math.abs(endA-endB-7*86400000)<1000;
+      if(consecutive){
+        if(p.cases_previous_week==null&&finite(prev.cases_total))p.cases_previous_week=prev.cases_total;
+        if(p.children_previous_week==null&&finite(prev.cases_children))p.children_previous_week=prev.cases_children;
+        if(p.schoolchildren_previous_week==null&&finite(prev.cases_schoolchildren))p.schoolchildren_previous_week=prev.cases_schoolchildren;
+        if(p.hospitalized_previous_week==null&&finite(prev.hospitalized_total))p.hospitalized_previous_week=prev.hospitalized_total;
+        if(p.covid_cases_previous_week==null&&finite(prev.covid_cases))p.covid_cases_previous_week=prev.covid_cases;
       }
+      if(p.cases_change_pct==null)p.cases_change_pct=change(p.cases_total,p.cases_previous_week);
+      if(p.children_change_pct==null)p.children_change_pct=change(p.cases_children,p.children_previous_week);
+      if(p.schoolchildren_change_pct==null)p.schoolchildren_change_pct=change(p.cases_schoolchildren,p.schoolchildren_previous_week);
+      if(p.hospitalizations_change_pct==null)p.hospitalizations_change_pct=change(p.hospitalized_total,p.hospitalized_previous_week);
+      if(p.covid_cases_change_pct==null)p.covid_cases_change_pct=change(p.covid_cases,p.covid_cases_previous_week);
     }
   }
   return rows;
