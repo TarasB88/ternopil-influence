@@ -200,7 +200,7 @@ function render(p,meta){
     document.getElementById('sourceNote').textContent=(meta.source&&meta.source.includes('Google Sheets')?meta.source:'User-provided report text')+'. Historical trends are unavailable until previous weeks are added to the dataset.';
     return;
   }
-  const missing = v => v == null ? '—' : fmt(v);
+  const missing = v => v == null || v === '' ? '0' : fmt(v);
   const percent = v => v == null ? '—' : fmt(Math.abs(v))+'%';
   const changeWord = (v, increase, decrease) => v == null ? 'зміни не визначено' : v > 0 ? increase : v < 0 ? decrease : 'не змінилась';
   const comparison = (current, previous) => current == null || previous == null ? '' : ' ('+fmt(current)+' випадків проти '+fmt(previous)+')';
