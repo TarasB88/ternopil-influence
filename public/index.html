@@ -58,34 +58,30 @@ const fmt = n => n == null ? "Немає даних" : new Intl.NumberFormat("uk
 const pct = n => n == null ? "Немає даних" : (n > 0 ? "+" : "") + fmt(n) + "%";
 const date = s => s ? new Date(s+"T12:00:00").toLocaleDateString("uk-UA",{day:"2-digit",month:"long",year:"numeric"}) : "—";
 const dateShort = s => s ? new Date(s+"T12:00:00").toLocaleDateString("uk-UA",{day:"2-digit",month:"2-digit",year:"numeric"}) : "—";
+const dateDayMonth = s => s ? new Date(s+"T12:00:00").toLocaleDateString("uk-UA",{day:"2-digit",month:"2-digit"}) : "—";
 const safe = (v, suffix="") => v == null ? "Немає даних" : fmt(v)+suffix;
 function kpi(label,value,note){return '<article class="kpi"><div class="label">'+label+'</div><div class="value">'+value+'</div><div class="note">'+note+'</div></article>'}
 function bar(label,value,max,detail){const width=max>0?Math.max(0,Math.min(100,value/max*100)):0;return '<div class="bar-row"><div class="bar-head"><span>'+label+'</span><strong>'+detail+'</strong></div><div class="track"><div class="bar" style="width:'+width+'%"></div></div></div>'}
 function render(p,meta){
   document.getElementById('periodLabel').textContent='Станом на '+dateShort(p.report_date);
-  const childrenShare=p.children_share_pct==null?'Немає даних':fmt(p.children_share_pct)+'%';
-  const schoolShare=p.schoolchildren_share_pct==null?'Немає даних':fmt(p.schoolchildren_share_pct)+'%';
-  const caseChange=p.cases_change_pct==null?'Немає даних':fmt(Math.abs(p.cases_change_pct))+'%';
-  const childChange=p.children_change_pct==null?'Немає даних':fmt(Math.abs(p.children_change_pct))+'%';
-  const schoolChange=p.schoolchildren_change_pct==null?'Немає даних':fmt(Math.abs(p.schoolchildren_change_pct))+'%';
-  const hospChange=p.hospitalizations_change_pct==null?'Немає даних':fmt(Math.abs(p.hospitalizations_change_pct))+'%';
-  const direction=(value,up,down)=>value==null?'зміна не визначена':(value>0?up: value<0?down:'без змін');
-  const thresholdText=p.epidemic_threshold_difference_pct==null?'':', що на '+fmt(Math.abs(p.epidemic_threshold_difference_pct))+'% нижче епідемічного порогу низької інтенсивності';
-  const schoolPrevious=p.cases_schoolchildren==null||p.schoolchildren_previous_week==null?'': ' ('+fmt(p.cases_schoolchildren)+' випадків проти '+fmt(p.schoolchildren_previous_week)+')';
-  const childPrevious=p.cases_children==null||p.children_previous_week==null?'': ' ('+fmt(p.cases_children)+' випадків проти '+fmt(p.children_previous_week)+')';
-  const casesPrevious=p.cases_total==null||p.cases_previous_week==null?'': ' ('+fmt(p.cases_total)+' випадків проти '+fmt(p.cases_previous_week)+')';
-  const hospPrevious=p.hospitalized_total==null||p.hospitalized_previous_week==null?'': ' (госпіталізовано '+fmt(p.hospitalized_total)+' осіб проти '+fmt(p.hospitalized_previous_week)+')';
-  const covidPrevious=p.covid_cases_previous_week==null?'':' (на минулому тижні — '+fmt(p.covid_cases_previous_week)+' випадків)';
-  const covidLabel=p.covid_cases_population==='adults'?' (дорослі)':'';
-  const lines=[
+  const missing = v => v == null ? '—' : fmt(v);
+  const percent = v => v == null ? '—' : fmt(Math.abs(v))+'%';
+  const changeWord = (v, increase, decrease) => v == null ? 'зміни не визначено' : v > 0 ? increase : v < 0 ? decrease : 'не змінилась';
+  const comparison = (current, previous) => current == null || previous == null ? '' : ' ('+fmt(current)+' випадків проти '+fmt(previous)+')';
+  const periodRange = dateDayMonth(p.period_start)+' – '+dateDayMonth(p.period_end)+'.'+String(p.period_end||'').slice(0,4)+'р.';
+  const covidN = p.covid_cases;
+  const covidNoun = covidN === 1 ? 'випадок' : (covidN != null && covidN >= 2 && covidN <= 4 ? 'випадки' : 'випадків');
+  const wastewaterText = p.wastewater_sars_cov2_positive === 0 && p.wastewater_influenza_ab_positive === 0
+    ? 'негативні' : (p.wastewater_sars_cov2_positive == null || p.wastewater_influenza_ab_positive == null ? 'немає повних даних щодо результатів' : 'не всі негативні');
+  const lines = [
     '<p><strong>Інформуємо про результати епідеміологічного моніторингу за грипом, ГРВІ та COVID-19 станом на '+dateShort(p.report_date)+' року.</strong></p>',
-    '<p>Загальна захворюваність на грип, ГРВІ та COVID-19 за останні 7 днів склала <strong>'+safe(p.incidence_per_100k)+' випадки на 100 тисяч населення</strong> (захворіло '+safe(p.cases_total)+' осіб)'+thresholdText+'.</p>',
-    '<p>За останній ('+fmt(p.week)+') тиждень ('+dateShort(p.period_start)+' – '+dateShort(p.period_end)+') кількість захворілих на ГРВІ у порівнянні з попереднім тижнем '+direction(p.cases_change_pct,'зросла','зменшилась')+' на '+caseChange+casesPrevious+'. Питома вага дітей серед хворих склала '+childrenShare+' ('+safe(p.cases_children)+' ос.), школярів – '+schoolShare+' ('+safe(p.cases_schoolchildren)+' ос.) від усіх захворілих дітей. У порівнянні з попереднім тижнем '+direction(p.children_change_pct,'відмічається збільшення','відмічається зменшення')+' кількості хворих на ГРВІ дітей на '+childChange+childPrevious+', школярів – '+schoolChange+schoolPrevious+'.</p>',
-    '<p>Госпіталізовано за звітний тиждень '+safe(p.hospitalized_total)+' осіб, із них '+safe(p.hospitalized_children)+' дітей ('+safe(p.hospitalized_children_share_pct,'%')+'). Кількість госпіталізованих '+direction(p.hospitalizations_change_pct,'збільшилась','зменшилась')+' у порівнянні з минулим тижнем на '+hospChange+hospPrevious+'.</p>',
-    '<p>За тиждень зареєстровано '+safe(p.covid_cases)+' випадки'+covidLabel+' захворювання на COVID-19'+covidPrevious+'.</p>',
-    '<p>Летальних випадків від грипу та COVID-19 в області: <strong>'+safe(p.deaths_influenza_covid)+'</strong>.</p>',
-    '<p>У вірусологічній лабораторії ДУ «Тернопільський ОЦКПХ МОЗ» методом ПЛР на групу респіраторних вірусів за тиждень обстежено '+safe(p.pcr_tested)+' хворих ('+(p.pcr_result_summary||'результати не зазначені')+').</p>',
-    '<p>За результатами моніторингу стічних вод за тиждень усі '+safe(p.wastewater_samples_total)+' проби були '+((p.wastewater_sars_cov2_positive===0&&p.wastewater_influenza_ab_positive===0)?'негативні':'перевірте результати')+' на віруси SARS-CoV-2, грипу А/В.</p>'
+    '<p>Загальна захворюваність на грип, ГРВІ та COVID-19 за останні 7 днів склала <strong>'+missing(p.incidence_per_100k)+' випадки на 100 тисяч населення</strong> (захворіло '+missing(p.cases_total)+' осіб), що на '+percent(p.epidemic_threshold_difference_pct)+' нижче епідемічного порогу низької інтенсивності.</p>',
+    '<p>За останній ('+missing(p.week)+') тиждень ('+periodRange+') кількість захворілих ГРВІ у порівнянні з попереднім тижнем '+changeWord(p.cases_change_pct,'зросла','зменшилась')+' на '+percent(p.cases_change_pct)+comparison(p.cases_total,p.cases_previous_week)+'. Питома вага дітей серед хворих склала '+missing(p.children_share_pct)+'% ('+missing(p.cases_children)+' ос.), школярів – '+missing(p.schoolchildren_share_pct)+'% ('+missing(p.cases_schoolchildren)+' ос.) від усіх захворілих дітей. У порівнянні з попереднім тижнем відмічається '+(p.children_change_pct==null?'невідома зміна кількості хворих на ГРВІ дітей':changeWord(p.children_change_pct,'збільшення','зменшення')+' хворих на ГРВІ дітей')+' на '+percent(p.children_change_pct)+comparison(p.cases_children,p.children_previous_week)+', школярів – на '+percent(p.schoolchildren_change_pct)+comparison(p.cases_schoolchildren,p.schoolchildren_previous_week)+'.</p>',
+    '<p>Госпіталізовано за звітний тиждень '+missing(p.hospitalized_total)+' осіб, із них '+missing(p.hospitalized_children)+' дітей ('+missing(p.hospitalized_children_share_pct)+'%). Кількість госпіталізованих '+changeWord(p.hospitalizations_change_pct,'збільшилась','зменшилась')+' у порівнянні з минулим тижнем на '+percent(p.hospitalizations_change_pct)+' (госпіталізовано '+missing(p.hospitalized_total)+' осіб проти '+missing(p.hospitalized_previous_week)+').</p>',
+    '<p>За тиждень зареєстровано '+missing(covidN)+' '+covidNoun+(p.covid_cases_population==='adults'?' (дорослі)':'')+' захворювання на COVID-19 (на минулому тижні – '+missing(p.covid_cases_previous_week)+' випадків).</p>',
+    '<p>Летальних випадків від грипу та COVID-19 в області не зареєстровано'+(p.deaths_influenza_covid!=null&&p.deaths_influenza_covid>0?': '+fmt(p.deaths_influenza_covid):'')+'.</p>',
+    '<p>У вірусологічній лабораторії ДУ «Тернопільський ОЦКПХ МОЗ» методом ПЛР на групу респіраторних вірусів за тиждень обстежено '+missing(p.pcr_tested)+' хворих ('+(p.pcr_result_summary||'результати не зазначені')+').</p>',
+    '<p>За результатами моніторингу стічних вод за тиждень усі '+missing(p.wastewater_samples_total)+' проби були '+wastewaterText+' на віруси SARS-CoV-2, грипу А/В.</p>'
   ];
   document.getElementById('summary').innerHTML=lines.join('');
   const delta=p.cases_change_pct==null?'Немає даних для порівняння':pct(p.cases_change_pct)+' до попереднього тижня';
