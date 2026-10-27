@@ -129,7 +129,6 @@ function Dashboard() {
 
         <RespiratorySituation week={week} sample={sample} current={total} previous={totalRow(prevRows)} fetchedAt={data.fetchedAt} />
 
-        <OblastIndicator current={total} previous={totalRow(prevRows)} week={week} />
 
         <Kpis focus={focus} prev={prevFocus} prevWeek={prevWeek} label={territory ?? "Уся область"} />
 
