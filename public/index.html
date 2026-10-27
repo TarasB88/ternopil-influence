@@ -77,7 +77,30 @@ const safe = (v, suffix="") => v == null ? "Немає даних" : fmt(v)+suff
 function kpi(label,value,note){return '<article class="kpi"><div class="label">'+label+'</div><div class="value">'+value+'</div><div class="note">'+note+'</div></article>'}
 function bar(label,value,max,detail){const width=max>0?Math.max(0,Math.min(100,value/max*100)):0;return '<div class="bar-row"><div class="bar-head"><span>'+label+'</span><strong>'+detail+'</strong></div><div class="track"><div class="bar" style="width:'+width+'%"></div></div></div>'}
 function render(p,meta){
-  document.getElementById('periodLabel').textContent='Станом на '+dateShort(p.report_date);
+  window.lastRenderedPeriod=p; window.lastRenderedMeta=meta;
+  document.getElementById('periodLabel').textContent=i18n[currentLanguage].reportAsOf+dateShort(p.report_date);
+  if(currentLanguage==='en'){
+    const n=v=>v==null?'No data':fmt(v), pp=v=>v==null?'No data':(v>0?'+':'')+fmt(v)+'%';
+    document.getElementById('summary').innerHTML=
+      '<p><strong>Weekly epidemiological surveillance report as of '+dateShort(p.report_date)+'.</strong></p>'+
+      '<p>Influenza and acute respiratory infection incidence: <strong>'+n(p.incidence_per_100k)+' per 100,000 population</strong>; total reported cases: <strong>'+n(p.cases_total)+'</strong>. Difference from the epidemic threshold: '+pp(p.epidemic_threshold_difference_pct)+'.</p>'+
+      '<p>Reporting week '+n(p.week)+' ('+dateDayMonth(p.period_start)+' – '+dateDayMonth(p.period_end)+'). Children: '+n(p.cases_children)+' ('+n(p.children_share_pct)+'%); schoolchildren: '+n(p.cases_schoolchildren)+'. Weekly change in total cases: '+pp(p.cases_change_pct)+'.</p>'+
+      '<p>Hospitalizations: '+n(p.hospitalized_total)+', including '+n(p.hospitalized_children)+' children. Weekly change: '+pp(p.hospitalizations_change_pct)+'.</p>'+
+      '<p>COVID-19 cases: '+n(p.covid_cases)+'; previous week: '+n(p.covid_cases_previous_week)+'. Deaths attributed to influenza/COVID-19: '+n(p.deaths_influenza_covid)+'.</p>'+
+      '<p>PCR tested: '+n(p.pcr_tested)+'. Results: '+(p.pcr_result_summary||'not specified')+'. Wastewater samples: '+n(p.wastewater_samples_total)+'; SARS-CoV-2-positive: '+n(p.wastewater_sars_cov2_positive)+'; influenza A/B-positive: '+n(p.wastewater_influenza_ab_positive)+'.</p>';
+    document.getElementById('kpis').innerHTML=[
+      kpi('Influenza and ARI cases',n(p.cases_total),p.cases_change_pct==null?'No comparison data':pp(p.cases_change_pct)+' vs previous week'),
+      kpi('Incidence rate',n(p.incidence_per_100k),'per 100,000 population'),
+      kpi('Cases among children',n(p.cases_children),n(p.children_share_pct)+'% of all cases'),
+      kpi('Hospitalized',n(p.hospitalized_total),n(p.hospitalized_children)+' children')
+    ].join('');
+    document.getElementById('structure').innerHTML=bar('Children',p.cases_children,p.cases_total,n(p.children_share_pct)+'%')+bar('Schoolchildren',p.cases_schoolchildren,p.cases_children,n(p.schoolchildren_share_pct)+'% of child cases')+'<p class="note">Schoolchildren are shown as a subset of children, following the source report denominator.</p>';
+    document.getElementById('hospital').innerHTML=bar('Hospitalized children',p.hospitalized_children,p.hospitalized_total,n(p.hospitalized_children_share_pct)+'%')+'<p>Total hospitalized: <strong>'+n(p.hospitalized_total)+'</strong>.</p><p class="note">Previous week: '+n(p.hospitalized_previous_week)+'; change: '+pp(p.hospitalizations_change_pct)+'.</p>';
+    document.getElementById('covid').innerHTML='<p>COVID-19 cases: <strong>'+n(p.covid_cases)+'</strong>.</p><p>Previous week: <strong>'+n(p.covid_cases_previous_week)+'</strong>.</p><p>Deaths attributed to influenza/COVID-19: <strong>'+n(p.deaths_influenza_covid)+'</strong>.</p>';
+    document.getElementById('lab').innerHTML='<p>PCR tests: <strong>'+n(p.pcr_tested)+'</strong>.</p><p>'+(p.pcr_result_summary||'Results summary unavailable')+'.</p><p>Wastewater samples: <strong>'+n(p.wastewater_samples_total)+'</strong>; SARS-CoV-2 positive: '+n(p.wastewater_sars_cov2_positive)+'; influenza A/B positive: '+n(p.wastewater_influenza_ab_positive)+'.</p>';
+    document.getElementById('sourceNote').textContent=meta.source+'. Historical trends are unavailable until previous weeks are added to the dataset.';
+    return;
+  }
   const missing = v => v == null ? '—' : fmt(v);
   const percent = v => v == null ? '—' : fmt(Math.abs(v))+'%';
   const changeWord = (v, increase, decrease) => v == null ? 'зміни не визначено' : v > 0 ? increase : v < 0 ? decrease : 'не змінилась';
@@ -166,9 +189,9 @@ const headerAliases = {
   pcr_tested:['Обстежено методом ПЛР','ПЛР обстежено','Кількість ПЛР-досліджень','pcr_tested'], pcr_result_summary:['Результати ПЛР','Підсумок лабораторних досліджень','pcr_result_summary'],
   wastewater_samples_total:['Проби стічних вод всього','Досліджено проб стічних вод','wastewater_samples_total'], wastewater_sars_cov2_positive:['SARS-CoV-2 позитивні проби','Позитивні проби на SARS-CoV-2','wastewater_sars_cov2_positive'], wastewater_influenza_ab_positive:['Грип A/B позитивні проби','Позитивні проби на грип А/В','wastewater_influenza_ab_positive']
 };
-function normalizeHeader(s){return String(s||'').replace(/^\\uFEFF/,'').trim().toLocaleLowerCase('uk-UA').replace(/[’‘ʼ]/g,"'").replace(/\\s+/g,' ');}
-function parseNumber(v){if(v==null||String(v).trim()===''||['—','-','н/д','немає даних'].includes(String(v).trim().toLocaleLowerCase('uk-UA')))return null;const n=Number(String(v).replace(/\\s/g,'').replace(',','.').replace('%',''));return Number.isFinite(n)?n:null;}
-function parseDate(v){if(!v)return null;const s=String(v).trim();let m=s.match(/^(\\d{4})-(\\d{1,2})-(\\d{1,2})$/);if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');m=s.match(/^(\\d{1,2})[./](\\d{1,2})[./](\\d{4})$/);return m?m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'):null;}
+function normalizeHeader(s){return String(s||'').replace(/^\uFEFF/,'').trim().toLocaleLowerCase('uk-UA').replace(/[’‘ʼ]/g,"'").replace(/\s+/g,' ');}
+function parseNumber(v){if(v==null||String(v).trim()===''||['—','-','н/д','немає даних'].includes(String(v).trim().toLocaleLowerCase('uk-UA')))return null;const n=Number(String(v).replace(/\s/g,'').replace(',','.').replace('%',''));return Number.isFinite(n)?n:null;}
+function parseDate(v){if(!v)return null;const s=String(v).trim();let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');m=s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/);return m?m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'):null;}
 async function refreshFromSheets(){
   const button=document.getElementById('refreshButton'), status=document.getElementById('refreshStatus');
   button.disabled=true; status.textContent=i18n[currentLanguage].loading;
