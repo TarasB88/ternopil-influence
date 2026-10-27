@@ -281,32 +281,36 @@ function renderTerritoryCases(selected){
   const note=document.getElementById('territoryCasesNote');
   if(!host)return;
   const all=getAllDashboardPeriods();
-  const rows=Array.isArray(all)?all:[];
-  const weekRows=rows.filter(r=>Number(r.year)===Number(selected.year)&&Number(r.week)===Number(selected.week));
-  const territoryRows=weekRows.filter(r=>{
+  const targetTerritories=[
+    'Кременецький район',
+    'Тернопільський район',
+    'Чортківський район',
+    'м. Тернопіль'
+  ];
+  const weekRows=(Array.isArray(all)?all:[]).filter(r=>
+    Number(r.year)===Number(selected.year)&&Number(r.week)===Number(selected.week)
+  );
+  const byTerritory=new Map();
+  weekRows.forEach(r=>{
     const name=normalizeTerritory(r.territory||'');
-    return name && name!=='Тернопільська область' && !/^(?:всього|усього|разом)(?:\\s|$)/i.test(name) && r.cases_total!=null;
+    if(!targetTerritories.includes(name)||r.cases_total==null||!Number.isFinite(Number(r.cases_total)))return;
+    if(!byTerritory.has(name))byTerritory.set(name,r);
   });
-  const seen=new Map();
-  territoryRows.forEach(r=>{
-    const name=normalizeTerritory(r.territory);
-    if(!seen.has(name))seen.set(name,r);
-  });
-  const list=[...seen.values()].sort((a,b)=>String(a.territory).localeCompare(String(b.territory),'uk'));
-  if(!list.length){
-    host.innerHTML='<div class="territory-case-empty">Для вибраного тижня джерело не містить підтверджених показників за окремими територіями. Обласний підсумок не розподіляється автоматично.</div>';
-    if(note)note.textContent='Дані відображаються лише для територій, наявних у джерелі за вибраний тиждень.';
-    return;
-  }
-  if(note)note.textContent='Звітний тиждень '+fmt(selected.week)+' · '+dateShort(selected.period_start)+' – '+dateShort(selected.period_end)+'. Показано '+fmt(list.length)+' територіальних рядків із джерела; обласний підсумок виключено, щоб уникнути подвійного підрахунку.';
-  host.innerHTML='<div class="territory-cases-grid">'+list.map(r=>{
-    const name=escapeMapText(normalizeTerritory(r.territory));
-    const selectedFlag=normalizeTerritory(r.territory)===normalizeTerritory(selected.territory);
+  const hasSourceData=targetTerritories.some(name=>byTerritory.has(name));
+  if(note)note.textContent='Звітний тиждень '+fmt(selected.week)+' · '+dateShort(selected.period_start)+' – '+dateShort(selected.period_end)+'. Показано три райони та м. Тернопіль лише за рядками, наявними в джерелі. Обласний підсумок не розподіляється між територіями.';
+  host.innerHTML='<div class="territory-cases-grid">'+targetTerritories.map(name=>{
+    const r=byTerritory.get(name);
+    const selectedFlag=normalizeTerritory(selected.territory)===name;
+    if(!r){
+      return '<div class="territory-case-item"'+(selectedFlag?' aria-current="true"':'')+'><div><div class="territory-case-name">'+escapeMapText(territoryLabel(name))+'</div><div class="territory-case-meta">За цей тиждень у джерелі немає окремого рядка</div></div><div class="territory-case-value">—</div></div>';
+    }
     const detail=r.incidence_per_100k==null?'Інтенсивний показник: немає даних':'На 100 тис. населення: '+fmt(r.incidence_per_100k);
-    return '<div class="territory-case-item"'+(selectedFlag?' aria-current="true"':'')+'><div><div class="territory-case-name">'+name+'</div><div class="territory-case-meta">'+detail+'</div></div><div class="territory-case-value">'+fmt(r.cases_total)+'</div></div>';
+    return '<div class="territory-case-item"'+(selectedFlag?' aria-current="true"':'')+'><div><div class="territory-case-name">'+escapeMapText(territoryLabel(name))+'</div><div class="territory-case-meta">'+detail+'</div></div><div class="territory-case-value">'+fmt(Number(r.cases_total))+'</div></div>';
   }).join('')+'</div>';
+  if(!hasSourceData){
+    host.innerHTML+='<div class="territory-case-empty">Джерело не містить окремих показників для трьох районів і м. Тернополя за вибраний тиждень. Перевірте територіальні рядки в Google Sheets.</div>';
+  }
 }
-
 function render(p,meta){
   window.lastRenderedPeriod=p; window.lastRenderedMeta=meta; updateNewPanels(p); renderAnalyticsModules(p); renderTerritoryCases(p);
   document.getElementById('periodLabel').textContent=i18n[currentLanguage].reportAsOf+dateShort(p.report_date);
