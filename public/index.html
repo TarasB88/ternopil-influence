@@ -62,7 +62,7 @@ footer{max-width:1200px;margin:auto;padding:0 20px 28px;color:#6b7e8d;font-size:
     <div class="prevention-item"><span>💊</span><strong>Не приймайте антибіотики самостійно</strong><p>Антибіотики не діють на віруси; застосовуйте їх лише за призначенням лікаря.</p></div>
     <div class="prevention-item"><span>🏠</span><strong>Захворіли — залишайтеся вдома</strong><p>Зв’яжіться із сімейним лікарем.</p></div>
   </div></section>
-  <section class="card expert-only" id="expertTableCard"><h2>Деталізована таблиця для фахівців</h2><div class="export-actions"><button class="action secondary" id="exportCsv">Завантажити CSV</button><button class="action secondary" id="exportXlsx">Завантажити XLSX</button><button class="action secondary" id="exportPdf">Зберегти інфографіку у PDF</button></div><div class="table-wrap"><table id="expertTable"><thead><tr><th>Тиждень</th><th>Територія</th><th>Випадки</th><th>Діти</th><th>Школярі</th><th>Госпіталізовано</th><th>Інтенсивний показник</th><th>Епідпоріг</th><th>Вакциновано</th></tr></thead><tbody></tbody></table></div><p class="note">Підсумковий запис області не додається до суми районних/міських записів. Порожні значення показуються як «—».</p></section>
+
   <section class="card" aria-labelledby="summaryTitle">
     <h2 id="summaryTitle" data-i18n="summaryTitle">Епідситуація із захворюваності на грип, ГРВІ та COVID-19 у Тернопільській області</h2>
     <div class="summary" id="summary" aria-live="polite"></div>
@@ -168,7 +168,7 @@ function exportTableCsv(){
 }
 
 function render(p,meta){
-  window.lastRenderedPeriod=p; window.lastRenderedMeta=meta; updateNewPanels(p); renderExpertTable();
+  window.lastRenderedPeriod=p; window.lastRenderedMeta=meta; updateNewPanels(p);
   document.getElementById('periodLabel').textContent=i18n[currentLanguage].reportAsOf+dateShort(p.report_date);
   if(currentLanguage==='en'){
     const n=v=>v==null?'No data':fmt(v), pp=v=>v==null?'No data':(v>0?'+':'')+fmt(v)+'%';
