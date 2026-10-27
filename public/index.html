@@ -211,7 +211,7 @@ async function init(){
   const territorySelect=document.getElementById('territorySelect');
   territorySelect.innerHTML='';
   territories.sort((a,b)=>a==='Тернопільська область'?-1:b==='Тернопільська область'?1:a.localeCompare(b,'uk'));
-  territories.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;territorySelect.appendChild(o);});
+  territories.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=currentLanguage==='en'&&t==='Тернопільська область'?'Ternopil Oblast':t;territorySelect.appendChild(o);});
   territorySelect.value='Тернопільська область';
   territorySelect.addEventListener('change',()=>refreshPeriodOptions(document.getElementById('periodSelect').value));
   refreshPeriodOptions();
