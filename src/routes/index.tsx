@@ -125,6 +125,8 @@ function Dashboard() {
           </div>
         )}
 
+        <TopEpidemiologyStatus current={total} />
+
         <RespiratorySituation week={week} sample={sample} current={total} previous={totalRow(prevRows)} fetchedAt={data.fetchedAt} />
 
         <OblastIndicator current={total} previous={totalRow(prevRows)} week={week} />
@@ -341,6 +343,56 @@ function DistrictMap({ rows, selected, onSelect }: { rows: Row[]; selected: stri
         </div>
       )}
     </Card>
+  );
+}
+
+function TopEpidemiologyStatus({ current }: { current?: Row }) {
+  const incidence = num(current?.incidence_per_100k);
+  const threshold = num(current?.intensity_low_threshold);
+  const thresholdKnown = incidence !== null && threshold !== null;
+  const exceeded = thresholdKnown && incidence >= threshold;
+  const level = current ? intensityLevel(current) : "nodata";
+  const thresholdTone = !thresholdKnown
+    ? "border-muted bg-muted/40"
+    : exceeded
+      ? "border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/30"
+      : "border-emerald-300 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30";
+  const levelTone: Record<Level, string> = {
+    below: "border-emerald-300 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/30",
+    low: "border-lime-300 bg-lime-50 dark:border-lime-900 dark:bg-lime-950/30",
+    medium: "border-amber-300 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30",
+    high: "border-red-300 bg-red-50 dark:border-red-900 dark:bg-red-950/30",
+    nodata: "border-muted bg-muted/40",
+  };
+  const thresholdText = !thresholdKnown ? "Немає даних для оцінки" : exceeded ? "Епідпоріг перевищено" : "Епідпоріг не перевищено";
+  const levelText: Record<Level, string> = {
+    below: "Нижче епідемічного порогу",
+    low: "Низький",
+    medium: "Середній",
+    high: "Високий",
+    nodata: "Немає даних про рівень інтенсивності",
+  };
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      <section className={`rounded-xl border-2 p-5 shadow-sm ${thresholdTone}`} aria-live="polite">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Епідемічний поріг</div>
+        <div className="mt-2 flex items-center gap-3">
+          <span className={`h-3 w-3 shrink-0 rounded-full ${!thresholdKnown ? "bg-muted-foreground" : exceeded ? "bg-red-600" : "bg-emerald-600"}`} />
+          <h2 className="text-xl font-bold">{thresholdText}</h2>
+        </div>
+        <p className="mt-2 text-sm">Обласна захворюваність: <strong>{fmt(incidence, 1)}</strong> на 100 тис. населення</p>
+        <p className="text-sm">Поріг низької інтенсивності: <strong>{fmt(threshold, 1)}</strong> на 100 тис.</p>
+      </section>
+      <section className={`rounded-xl border-2 p-5 shadow-sm ${levelTone[level]}`} aria-live="polite">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Рівень інтенсивності епідемічного процесу</div>
+        <div className="mt-2 flex items-center gap-3">
+          <span className={`h-3 w-3 shrink-0 rounded-full ${LEVEL_COLOR[level]}`} />
+          <h2 className="text-xl font-bold">{levelText[level]}</h2>
+        </div>
+        <p className="mt-2 text-sm">Показник захворюваності: <strong>{fmt(incidence, 1)}</strong> на 100 тис. населення</p>
+        <p className="text-sm">Оцінка визначається за порогами, що надійшли з джерела даних.</p>
+      </section>
+    </div>
   );
 }
 
