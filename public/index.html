@@ -24,7 +24,7 @@ label{display:block;font-size:.82rem;font-weight:700;margin-bottom:6px;color:#4b
 footer{max-width:1200px;margin:auto;padding:0 20px 28px;color:#6b7e8d;font-size:.8rem}
 @media(max-width:800px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.two{grid-template-columns:1fr}.period{margin-left:0;width:100%}}
 .public-only{display:block}.expert-only{display:none}.expert-mode .public-only{display:none}.expert-mode .expert-only{display:block}
-.status-panel{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.status-chip{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:10px 15px;font-weight:800;background:#e5f6ed;color:#176642}.status-dot{width:12px;height:12px;border-radius:50%;background:#24945f;box-shadow:0 0 0 4px #cceedd}.status-detail{color:#526b7b;line-height:1.5}
+.donut-row{display:flex;align-items:center;gap:18px;margin:8px 0 18px}.donut{width:132px;height:132px;border-radius:50%;flex:0 0 auto;position:relative;background:conic-gradient(#2679a7 var(--child-share),#b7d8c7 0)}.donut:after{content:"";position:absolute;inset:25px;background:white;border-radius:50%}.donut-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:1;font-weight:800;font-size:1.1rem}.donut-legend{display:grid;gap:8px}.legend-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px}@media print{header,.toolbar,footer,.expert-only,#hromadaMap,.map-legend{display:none!important}body{background:#fff}.container{max-width:none;padding:0}.card,.kpi{box-shadow:none;break-inside:avoid}.public-only{display:block!important}}.status-panel{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.status-chip{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:10px 15px;font-weight:800;background:#e5f6ed;color:#176642}.status-dot{width:12px;height:12px;border-radius:50%;background:#24945f;box-shadow:0 0 0 4px #cceedd}.status-detail{color:#526b7b;line-height:1.5}
 .prevention-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.prevention-item{background:#f4f8fa;border:1px solid #e1ebf0;border-radius:12px;padding:14px}.prevention-item>span{font-size:1.6rem;display:block;margin-bottom:7px}.prevention-item strong{display:block;line-height:1.35}.prevention-item p{font-size:.88rem;color:#607587;margin:7px 0 0;line-height:1.45}
 .table-wrap{overflow:auto;max-width:100%}#expertTable{width:100%;border-collapse:collapse;font-size:.88rem}#expertTable th,#expertTable td{padding:10px;border-bottom:1px solid #e2eaf0;text-align:left;white-space:nowrap}#expertTable th{background:#f0f5f8;color:#35566b;position:sticky;top:0}.export-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
 @media(max-width:700px){.prevention-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:420px){.prevention-grid{grid-template-columns:1fr}}
@@ -81,7 +81,7 @@ footer{max-width:1200px;margin:auto;padding:0 20px 28px;color:#6b7e8d;font-size:
   <section class="card"><h2 data-i18n="sourceTitle">Джерело та примітки</h2><p class="note" id="sourceNote"></p></section>
 </main>
 <footer data-i18n="footer">Інформаційний інструмент епідеміологічного моніторингу. Перед офіційним використанням перевірте значення за первинним звітом.</footer>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>\n<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 let currentLanguage = 'uk';
 const i18n = {
@@ -124,6 +124,12 @@ function englishSourceText(value){
   return s;
 }
 
+function childAdultDonut(p){
+  if(p.cases_total==null||p.cases_children==null||p.cases_total<=0)return '';
+  const adults=Math.max(0,p.cases_total-p.cases_children),share=Math.max(0,Math.min(100,p.cases_children/p.cases_total*100));
+  const childLabel=currentLanguage==='en'?'Children':'Діти',adultLabel=currentLanguage==='en'?'Adults':'Дорослі';
+  return '<div class="donut-row"><div class="donut" style="--child-share:'+share+'%"><span class="donut-center">'+fmt(share)+'%</span></div><div class="donut-legend"><div><i class="legend-dot" style="background:#2679a7"></i><strong>'+childLabel+': '+fmt(p.cases_children)+'</strong> ('+fmt(share)+'%)</div><div><i class="legend-dot" style="background:#b7d8c7"></i><strong>'+adultLabel+': '+fmt(adults)+'</strong> ('+fmt(100-share)+'%)</div></div></div>';
+}
 function displayValue(v){return v==null||v===''?'—':fmt(v);}
 function getAllDashboardPeriods(){return (window.liveSheetData||window.initialDashboardData)?.periods||[];}
 function updateNewPanels(p){
@@ -185,7 +191,7 @@ function exportTableCsv(){
       kpi('Cases among children',n(p.cases_children),n(p.children_share_pct)+'% of all cases'),
       kpi('Hospitalized',n(p.hospitalized_total),n(p.hospitalized_children)+' children')
     ].join('');
-    document.getElementById('structure').innerHTML=bar('Children',p.cases_children,p.cases_total,n(p.children_share_pct)+'%')+bar('Schoolchildren',p.cases_schoolchildren,p.cases_children,n(p.schoolchildren_share_pct)+'% of child cases')+'<p class="note">Schoolchildren are shown as a subset of children, following the denominator in the source report.</p>';
+    document.getElementById('structure').innerHTML=childAdultDonut(p)+bar('Children',p.cases_children,p.cases_total,n(p.children_share_pct)+'%')+bar('Schoolchildren',p.cases_schoolchildren,p.cases_children,n(p.schoolchildren_share_pct)+'% of child cases')+'<p class="note">Schoolchildren are shown as a subset of children, following the denominator in the source report.</p>';
     document.getElementById('hospital').innerHTML=bar('Hospitalized children',p.hospitalized_children,p.hospitalized_total,n(p.hospitalized_children_share_pct)+'%')+'<p>Total hospitalized: <strong>'+n(p.hospitalized_total)+'</strong>.</p><p class="note">Previous week: '+n(p.hospitalized_previous_week)+'; change: '+pp(p.hospitalizations_change_pct)+'.</p>';
     document.getElementById('covid').innerHTML='<p>COVID-19 cases: <strong>'+n(p.covid_cases)+'</strong>.</p><p>Previous week: <strong>'+n(p.covid_cases_previous_week)+'</strong>.</p><p>Deaths attributed to influenza/COVID-19: <strong>'+n(p.deaths_influenza_covid)+'</strong>.</p>';
     document.getElementById('lab').innerHTML='<p>PCR-tested patients: <strong>'+n(p.pcr_tested)+'</strong>.</p><p>Positive PCR results: <strong>'+n(p.pcr_positive)+'</strong>.</p><p>'+englishSourceText(p.pcr_result_summary)+'.</p><p>Wastewater samples: <strong>'+n(p.wastewater_samples_total)+'</strong>; SARS-CoV-2 positive: '+n(p.wastewater_sars_cov2_positive)+'; influenza A/B positive: '+n(p.wastewater_influenza_ab_positive)+'.</p>';
@@ -496,7 +502,11 @@ document.getElementById('modeButton')?.addEventListener('click',()=>{
   if(expert)renderExpertTable();
 });
 document.getElementById('exportCsv')?.addEventListener('click',exportTableCsv);
-document.getElementById('exportXlsx')?.addEventListener('click',()=>alert('Для XLSX потрібне підключення бібліотеки експорту. Наразі скористайтеся CSV.'));
+document.getElementById('exportXlsx')?.addEventListener('click',()=>{
+  if(!window.XLSX){alert('Бібліотека XLSX не завантажилась. Скористайтеся CSV.');return;}
+  const rows=[['Рік','Тиждень','Територія','Випадки','Діти','Школярі','Госпіталізовано','Інтенсивний показник','Поріг низької інтенсивності','Вакциновано'],...getAllDashboardPeriods().map(p=>[p.year,p.week,p.territory,p.cases_total,p.cases_children,p.cases_schoolchildren,p.hospitalized_total,p.incidence_per_100k,p.intensity_low_threshold??p.threshold_low??null,p.vaccinated_total??p.vaccination_total??null])];
+  const ws=window.XLSX.utils.aoa_to_sheet(rows),wb=window.XLSX.utils.book_new();window.XLSX.utils.book_append_sheet(wb,ws,'Дані');window.XLSX.writeFile(wb,'ternopil-influence-data.xlsx');
+});
 document.getElementById('exportPdf')?.addEventListener('click',()=>window.print());
 \ninit().catch(error=>{document.getElementById('summary').innerHTML='<p>Не вдалося завантажити дані. Перевірте файл public/data/weekly.json.</p>';console.error(error)});
 </script>
