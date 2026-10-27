@@ -70,13 +70,14 @@ function setLanguage(lang) {
   document.querySelectorAll('[data-i18n]').forEach(el => { const key=el.getAttribute('data-i18n'); if(i18n[lang][key]) el.textContent=i18n[lang][key]; });
   const aria=document.querySelector('[data-i18n-aria="kpis"]'); if(aria) aria.setAttribute('aria-label',i18n[lang].kpis);
   document.querySelectorAll('#periodSelect option').forEach(o=>{o.textContent=lang==='en'?o.textContent.replace(' · тиждень ',' · Week '):o.textContent.replace(' · Week ',' · тиждень ');});
-  if (window.lastRenderedPeriod && window.lastRenderedMeta) render(window.lastRenderedPeriod, window.lastRenderedMeta);
+  const selectedPeriodKey = document.getElementById('periodSelect').value;
+  if (window.initialDashboardData) refreshPeriodOptions(selectedPeriodKey);
   if (window.lastSourceStatus) document.getElementById('refreshStatus').textContent=window.lastSourceStatus;
 }
-const fmt = n => n == null ? "Немає даних" : new Intl.NumberFormat("uk-UA",{maximumFractionDigits:1}).format(n);
-const pct = n => n == null ? "Немає даних" : (n > 0 ? "+" : "") + fmt(n) + "%";
-const date = s => s ? new Date(s+"T12:00:00").toLocaleDateString("uk-UA",{day:"2-digit",month:"long",year:"numeric"}) : "—";
-const dateShort = s => s ? new Date(s+"T12:00:00").toLocaleDateString("uk-UA",{day:"2-digit",month:"2-digit",year:"numeric"}) : "—";
+const fmt = n => n == null ? i18n[currentLanguage].noData : new Intl.NumberFormat(currentLanguage==='uk'?'uk-UA':'en-GB',{maximumFractionDigits:1}).format(n);
+const pct = n => n == null ? i18n[currentLanguage].noData : (n > 0 ? "+" : "") + fmt(n) + "%";
+const date = s => s ? new Date(s+"T12:00:00").toLocaleDateString(currentLanguage==='uk'?'uk-UA':'en-GB',{day:"2-digit",month:"long",year:"numeric"}) : "—";
+const dateShort = s => s ? new Date(s+"T12:00:00").toLocaleDateString(currentLanguage==='uk'?'uk-UA':'en-GB',{day:"2-digit",month:"2-digit",year:"numeric"}) : "—";
 const dateDayMonth = s => s ? s.slice(8,10)+"."+s.slice(5,7)+"." : "—";
 const safe = (v, suffix="") => v == null ? "Немає даних" : fmt(v)+suffix;
 function kpi(label,value,note){return '<article class="kpi"><div class="label">'+label+'</div><div class="value">'+value+'</div><div class="note">'+note+'</div></article>'}
@@ -86,23 +87,31 @@ function render(p,meta){
   document.getElementById('periodLabel').textContent=i18n[currentLanguage].reportAsOf+dateShort(p.report_date);
   if(currentLanguage==='en'){
     const n=v=>v==null?'No data':fmt(v), pp=v=>v==null?'No data':(v>0?'+':'')+fmt(v)+'%';
-    document.getElementById('summary').innerHTML=
-      '<p><strong>Weekly epidemiological surveillance report as of '+dateShort(p.report_date)+'.</strong></p>'+
-      '<p>Influenza and acute respiratory infection incidence: <strong>'+n(p.incidence_per_100k)+' per 100,000 population</strong>; total reported cases: <strong>'+n(p.cases_total)+'</strong>. Difference from the epidemic threshold: '+pp(p.epidemic_threshold_difference_pct)+'.</p>'+
-      '<p>Reporting week '+n(p.week)+' ('+dateDayMonth(p.period_start)+' – '+dateDayMonth(p.period_end)+'). Children: '+n(p.cases_children)+' ('+n(p.children_share_pct)+'%); schoolchildren: '+n(p.cases_schoolchildren)+'. Weekly change in total cases: '+pp(p.cases_change_pct)+'.</p>'+
-      '<p>Hospitalizations: '+n(p.hospitalized_total)+', including '+n(p.hospitalized_children)+' children. Weekly change: '+pp(p.hospitalizations_change_pct)+'.</p>'+
-      '<p>COVID-19 cases: '+n(p.covid_cases)+'; previous week: '+n(p.covid_cases_previous_week)+'. Deaths attributed to influenza/COVID-19: '+n(p.deaths_influenza_covid)+'.</p>'+
-      '<p>PCR tested: '+n(p.pcr_tested)+'. Results: '+(p.pcr_result_summary||'not specified')+'. Wastewater samples: '+n(p.wastewater_samples_total)+'; SARS-CoV-2-positive: '+n(p.wastewater_sars_cov2_positive)+'; influenza A/B-positive: '+n(p.wastewater_influenza_ab_positive)+'.</p>';
+    const deltaWord=(v,up,down)=>v==null?'change unavailable':v>0?up:v<0?down:'no change';
+    const comparison=(now,prev)=>now==null||prev==null?'':' ('+n(now)+' cases vs '+n(prev)+')';
+    const range=dateDayMonth(p.period_start)+' – '+dateDayMonth(p.period_end)+'.'+String(p.period_end||'').slice(0,4);
+    const covidLabel=p.covid_cases===1?'case':'cases';
+    const wastewaterText=p.wastewater_sars_cov2_positive===0&&p.wastewater_influenza_ab_positive===0?'negative':(p.wastewater_sars_cov2_positive>0||p.wastewater_influenza_ab_positive>0?'positive for at least one target':'not specified');
+    document.getElementById('summary').innerHTML=[
+      '<p><strong>Weekly epidemiological surveillance report as of '+dateShort(p.report_date)+'.</strong></p>',
+      '<p>Influenza and acute respiratory infection incidence for the last 7 days was <strong>'+n(p.incidence_per_100k)+' cases per 100,000 population</strong> ('+n(p.cases_total)+' cases reported), '+(p.epidemic_threshold_difference_pct==null?'with no epidemic-threshold comparison available':(p.epidemic_threshold_difference_pct<0?pp(Math.abs(p.epidemic_threshold_difference_pct))+' below':pp(p.epidemic_threshold_difference_pct)+' above')+' the epidemic threshold')+'.</p>',
+      '<p>In reporting week '+n(p.week)+' ('+range+'), total ARI cases '+deltaWord(p.cases_change_pct,'increased','decreased')+' by '+pp(p.cases_change_pct)+comparison(p.cases_total,p.cases_previous_week)+'. Children accounted for '+n(p.children_share_pct)+'% ('+n(p.cases_children)+' cases), and schoolchildren accounted for '+n(p.schoolchildren_share_pct)+'% ('+n(p.cases_schoolchildren)+' cases) of all cases among children. Compared with the previous week, cases among children '+deltaWord(p.children_change_pct,'increased','decreased')+' by '+pp(p.children_change_pct)+comparison(p.cases_children,p.children_previous_week)+', while schoolchild cases '+deltaWord(p.schoolchildren_change_pct,'increased','decreased')+' by '+pp(p.schoolchildren_change_pct)+comparison(p.cases_schoolchildren,p.schoolchildren_previous_week)+'.</p>',
+      '<p>Hospitalizations during the reporting week: '+n(p.hospitalized_total)+' people, including '+n(p.hospitalized_children)+' children ('+n(p.hospitalized_children_share_pct)+'%). Hospitalizations '+deltaWord(p.hospitalizations_change_pct,'increased','decreased')+' by '+pp(p.hospitalizations_change_pct)+' compared with the previous week ('+n(p.hospitalized_total)+' vs '+n(p.hospitalized_previous_week)+').</p>',
+      '<p>COVID-19: '+n(p.covid_cases)+' '+covidLabel+(p.covid_cases_population==='adults'?' among adults':p.covid_cases_population==='all_population'?' in the total population':'')+' reported this week (previous week: '+n(p.covid_cases_previous_week)+').</p>',
+      '<p>Deaths attributed to influenza and COVID-19: '+n(p.deaths_influenza_covid)+'.</p>',
+      '<p>The virology laboratory of the Ternopil Oblast Centre for Disease Control and Prevention tested '+n(p.pcr_tested)+' patients for respiratory viruses by PCR. Positive PCR results: '+n(p.pcr_positive)+'. Results summary: '+(p.pcr_result_summary||'not specified')+'.</p>',
+      '<p>Wastewater surveillance: '+n(p.wastewater_samples_total)+' samples tested; SARS-CoV-2-positive samples: '+n(p.wastewater_sars_cov2_positive)+'; influenza A/B-positive samples: '+n(p.wastewater_influenza_ab_positive)+'. Overall result: '+wastewaterText+'.</p>'
+    ].join('');
     document.getElementById('kpis').innerHTML=[
       kpi('Influenza and ARI cases',n(p.cases_total),p.cases_change_pct==null?'No comparison data':pp(p.cases_change_pct)+' vs previous week'),
       kpi('Incidence rate',n(p.incidence_per_100k),'per 100,000 population'),
       kpi('Cases among children',n(p.cases_children),n(p.children_share_pct)+'% of all cases'),
       kpi('Hospitalized',n(p.hospitalized_total),n(p.hospitalized_children)+' children')
     ].join('');
-    document.getElementById('structure').innerHTML=bar('Children',p.cases_children,p.cases_total,n(p.children_share_pct)+'%')+bar('Schoolchildren',p.cases_schoolchildren,p.cases_children,n(p.schoolchildren_share_pct)+'% of child cases')+'<p class="note">Schoolchildren are shown as a subset of children, following the source report denominator.</p>';
+    document.getElementById('structure').innerHTML=bar('Children',p.cases_children,p.cases_total,n(p.children_share_pct)+'%')+bar('Schoolchildren',p.cases_schoolchildren,p.cases_children,n(p.schoolchildren_share_pct)+'% of child cases')+'<p class="note">Schoolchildren are shown as a subset of children, following the denominator in the source report.</p>';
     document.getElementById('hospital').innerHTML=bar('Hospitalized children',p.hospitalized_children,p.hospitalized_total,n(p.hospitalized_children_share_pct)+'%')+'<p>Total hospitalized: <strong>'+n(p.hospitalized_total)+'</strong>.</p><p class="note">Previous week: '+n(p.hospitalized_previous_week)+'; change: '+pp(p.hospitalizations_change_pct)+'.</p>';
     document.getElementById('covid').innerHTML='<p>COVID-19 cases: <strong>'+n(p.covid_cases)+'</strong>.</p><p>Previous week: <strong>'+n(p.covid_cases_previous_week)+'</strong>.</p><p>Deaths attributed to influenza/COVID-19: <strong>'+n(p.deaths_influenza_covid)+'</strong>.</p>';
-    document.getElementById('lab').innerHTML='<p>PCR tests: <strong>'+n(p.pcr_tested)+'</strong>.</p><p>'+(p.pcr_result_summary||'Results summary unavailable')+'.</p><p>Wastewater samples: <strong>'+n(p.wastewater_samples_total)+'</strong>; SARS-CoV-2 positive: '+n(p.wastewater_sars_cov2_positive)+'; influenza A/B positive: '+n(p.wastewater_influenza_ab_positive)+'.</p>';
+    document.getElementById('lab').innerHTML='<p>PCR-tested patients: <strong>'+n(p.pcr_tested)+'</strong>.</p><p>Positive PCR results: <strong>'+n(p.pcr_positive)+'</strong>.</p><p>'+(p.pcr_result_summary||'Results summary unavailable')+'.</p><p>Wastewater samples: <strong>'+n(p.wastewater_samples_total)+'</strong>; SARS-CoV-2 positive: '+n(p.wastewater_sars_cov2_positive)+'; influenza A/B positive: '+n(p.wastewater_influenza_ab_positive)+'.</p>';
     document.getElementById('sourceNote').textContent=meta.source+'. Historical trends are unavailable until previous weeks are added to the dataset.';
     return;
   }
@@ -122,7 +131,7 @@ function render(p,meta){
     '<p>Госпіталізовано за звітний тиждень '+missing(p.hospitalized_total)+' осіб, із них '+missing(p.hospitalized_children)+' дітей ('+missing(p.hospitalized_children_share_pct)+'%). Кількість госпіталізованих '+changeWord(p.hospitalizations_change_pct,'збільшилась','зменшилась')+' у порівнянні з минулим тижнем на '+percent(p.hospitalizations_change_pct)+' (госпіталізовано '+missing(p.hospitalized_total)+' осіб проти '+missing(p.hospitalized_previous_week)+').</p>',
     '<p>За тиждень зареєстровано '+missing(covidN)+' '+covidNoun+(p.covid_cases_population==='adults'?' (дорослі)':'')+' захворювання на COVID-19 (на минулому тижні – '+missing(p.covid_cases_previous_week)+' випадків).</p>',
     '<p>Летальних випадків від грипу та COVID-19 в області не зареєстровано'+(p.deaths_influenza_covid!=null&&p.deaths_influenza_covid>0?': '+fmt(p.deaths_influenza_covid):'')+'.</p>',
-    '<p>У вірусологічній лабораторії ДУ «Тернопільський ОЦКПХ МОЗ» методом ПЛР на групу респіраторних вірусів за тиждень обстежено '+missing(p.pcr_tested)+' хворих ('+(p.pcr_result_summary||'результати не зазначені')+').</p>',
+    '<p>У вірусологічній лабораторії ДУ «Тернопільський ОЦКПХ МОЗ» методом ПЛР на групу респіраторних вірусів за тиждень обстежено '+missing(p.pcr_tested)+' хворих; позитивних результатів: '+missing(p.pcr_positive)+' ('+(p.pcr_result_summary||'результати не зазначені')+').</p>',
     '<p>За результатами моніторингу стічних вод за тиждень усі '+missing(p.wastewater_samples_total)+' проби були '+wastewaterText+' на віруси SARS-CoV-2, грипу А/В.</p>'
   ];
   document.getElementById('summary').innerHTML=lines.join('');
@@ -210,21 +219,21 @@ function parseCSV(text) {
   return rows;
 }
 const headerAliases = {
-  cases_total:['Захворіло всього','Усього захворіло','Всього випадків','Кількість захворілих','Грип та ГРВІ всього','cases_total'],
-  territory:['Територія','Територіальна одиниця','Область','Регіон','Територія звіту','Назва території','Адміністративно-територіальна одиниця','territory','region','oblast'], year:['Рік','Звітний рік','year'], week:['Тиждень','Звітний тиждень','Епідемічний тиждень','№ тижня','week'],
+  cases_total:['Захворіло всього','Усього захворіло','Всього захворіло','Всього випадків','Кількість захворілих','Грип та ГРВІ всього','Захворіло на грип та ГРВІ','Захворіло на ГРВІ','cases_total'],
+  territory:['Територія','Територіальна одиниця','Область','Регіон','Територія звіту','Назва території','Адміністративно-територіальна одиниця','territory','region','oblast'], year:['Рік','Звітний рік','year'], week:['Тиждень','Звітний тиждень','Епідемічний тиждень','№ тижня','Номер тижня','week'],
   period_start:['Початок періоду','Дата початку','Період з','period_start'], period_end:['Кінець періоду','Дата завершення','Період по','period_end'],
   report_date:['Дата звіту','Станом на','Дата оновлення','report_date'], incidence_per_100k:['Інтенсивний показник','Захворюваність на 100 тис.','На 100 тис. населення','incidence_per_100k'],
   epidemic_threshold_difference_pct:['Відхилення від епідпорогу, %','Відхилення від епідемічного порогу','epidemic_threshold_difference_pct'],
   cases_previous_week:['Захворіло минулого тижня','Попередній тиждень','cases_previous_week'], cases_change_pct:['Зміна до попереднього тижня, %','Темп приросту, %','cases_change_pct'],
   cases_children:['Захворіло дітей','Діти 0–17 років','Діти','Випадки серед дітей','cases_children'], children_share_pct:['Питома вага дітей, %','Частка дітей','children_share_pct'],
   children_previous_week:['Діти минулого тижня','Захворіло дітей попереднього тижня','children_previous_week'], children_change_pct:['Зміна серед дітей, %','Приріст дітей, %','children_change_pct'],
-  cases_schoolchildren:['Захворіло школярів','Школярі','Випадки серед школярів','cases_schoolchildren'], schoolchildren_share_pct:['Питома вага школярів, %','Школярі, %','schoolchildren_share_pct'],
+  cases_schoolchildren:['Захворіло школярів','Школярі','Випадки серед школярів','cases_schoolchildren'], schoolchildren_share_pct:['Питома вага школярів, %','Школярі, %','Школярі від дітей, %','schoolchildren_share_pct'], schoolchildren_share_denominator:['Знаменник питомої ваги школярів','schoolchildren_share_denominator'],
   schoolchildren_previous_week:['Школярі минулого тижня','Захворіло школярів попереднього тижня','schoolchildren_previous_week'], schoolchildren_change_pct:['Зміна серед школярів, %','Приріст школярів, %','schoolchildren_change_pct'],
   hospitalized_total:['Госпіталізовано всього','Усього госпіталізовано','Госпіталізації','hospitalized_total'], hospitalized_children:['Госпіталізовано дітей','Госпіталізовані діти','hospitalized_children'],
   hospitalized_children_share_pct:['Частка госпіталізованих дітей, %','Госпіталізовані діти, %','hospitalized_children_share_pct'], hospitalized_previous_week:['Госпіталізовано минулого тижня','Госпіталізації попереднього тижня','hospitalized_previous_week'],
   hospitalizations_change_pct:['Зміна госпіталізацій, %','hospitalizations_change_pct'], covid_cases:['Випадки COVID-19','Захворіло на COVID-19','COVID-19','covid_cases'],
-  covid_cases_previous_week:['COVID-19 минулого тижня','Випадки COVID-19 попереднього тижня','covid_cases_previous_week'], deaths_influenza_covid:['Летальні випадки','Померло від грипу та COVID-19','deaths_influenza_covid'],
-  pcr_tested:['Обстежено методом ПЛР','ПЛР обстежено','Кількість ПЛР-досліджень','pcr_tested'], pcr_result_summary:['Результати ПЛР','Підсумок лабораторних досліджень','pcr_result_summary'],
+  covid_cases_previous_week:['COVID-19 минулого тижня','Випадки COVID-19 попереднього тижня','covid_cases_previous_week'], covid_cases_population:['Охоплення випадків COVID-19','Група населення COVID-19','covid_cases_population'], deaths_influenza_covid:['Летальні випадки','Померло від грипу та COVID-19','Смерті від грипу/COVID-19','deaths_influenza_covid'],
+  pcr_tested:['Обстежено методом ПЛР','ПЛР обстежено','Кількість ПЛР-досліджень','Обстежено ПЛР','pcr_tested'], pcr_positive:['ПЛР позитивні','Позитивні результати ПЛР','Виявлено методом ПЛР','pcr_positive'], pcr_result_summary:['Результати ПЛР','Підсумок лабораторних досліджень','Висновок ПЛР','pcr_result_summary'],
   wastewater_samples_total:['Проби стічних вод всього','Досліджено проб стічних вод','wastewater_samples_total'], wastewater_sars_cov2_positive:['SARS-CoV-2 позитивні проби','Позитивні проби на SARS-CoV-2','wastewater_sars_cov2_positive'], wastewater_influenza_ab_positive:['Грип A/B позитивні проби','Позитивні проби на грип А/В','wastewater_influenza_ab_positive']
 };
 function normalizeHeader(s){return String(s||'').replace(/^\uFEFF/,'').trim().toLocaleLowerCase('uk-UA').replace(/[’‘ʼ]/g,"'").replace(/\s+/g,' ');}
@@ -244,7 +253,9 @@ async function refreshFromSheets(){
       columns[field]=headers.findIndex(h=>normalized.includes(h));
     }
     const mapped=rows.slice(1).map(row=>{
-      const obj={};for(const [field,index] of Object.entries(columns)){if(index>=0)obj[field]=field==='pcr_result_summary'?(row[index]||null):field==='territory'?normalizeTerritory(row[index]):parseNumber(row[index]);} obj.territory=normalizeTerritory(obj.territory);
+      const obj={};for(const [field,index] of Object.entries(columns)){if(index>=0)obj[field]=['pcr_result_summary','schoolchildren_share_denominator','covid_cases_population'].includes(field)?((row[index]||'').trim()||null):field==='territory'?normalizeTerritory(row[index]):parseNumber(row[index]);} obj.territory=normalizeTerritory(obj.territory);
+      if(obj.covid_cases_population){const cp=String(obj.covid_cases_population).toLocaleLowerCase('uk-UA');obj.covid_cases_population=cp.includes('дорос')||cp==='adults'?'adults':cp.includes('все насел')||cp.includes('усього')||cp==='all_population'?'all_population':'unknown';}
+      if(obj.schoolchildren_share_denominator){const sd=String(obj.schoolchildren_share_denominator).toLocaleLowerCase('uk-UA');obj.schoolchildren_share_denominator=sd.includes('діт')||sd==='cases_children'?'cases_children':sd.includes('всі')||sd.includes('усього')||sd==='cases_total'?'cases_total':'unknown';}
       obj.year=obj.year??null;obj.week=obj.week??null;
       obj.period_start=parseDate(columns.period_start>=0?row[columns.period_start]:'')||null;
       obj.period_end=parseDate(columns.period_end>=0?row[columns.period_end]:'')||null;
