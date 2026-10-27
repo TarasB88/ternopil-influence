@@ -1,5 +1,5 @@
 const RESPIRATORY_DEFAULT_CSV_URL = "https://docs.google.com/spreadsheets/d/1Oxri7kz6UMFpkTENTjoQUHwY5yCuhczJY22c0K5fqbI/export?format=csv&gid=1951237247";
-const VACCINATION_CSV_URL = "";
+const VACCINATION_CSV_URL = "https://docs.google.com/spreadsheets/d/1Oxri7kz6UMFpkTENTjoQUHwY5yCuhczJY22c0K5fqbI/export?format=csv&gid=1503721021";
 
 const SOURCE_CONFIG = {
   "/api/respiratory": "RESPIRATORY_CSV_URL",
