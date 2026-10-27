@@ -167,9 +167,14 @@ function Dashboard() {
         </div>
 
         {weeks.length >= 2 && (
-          <Card title="Динаміка за тижнями" sub={`Доступно тижнів у джерелі: ${weeks.length}. Короткий ряд — висновки про тенденцію робіть обережно.`}>
-            <Trend rows={data.respiratory} weeks={weeks} territory={territory} />
-          </Card>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card title="Динаміка захворюваності на 100 тис. населення" sub={`Епідемічні пороги показані окремими лініями · ${territory ?? "Уся область"} · доступно тижнів: ${weeks.length}`}>
+              <IncidenceTrend rows={data.respiratory} weeks={weeks} territory={territory} />
+            </Card>
+            <Card title="Динаміка абсолютної кількості випадків" sub={`Кількість випадків без ліній епідемічних порогів · ${territory ?? "Уся область"} · доступно тижнів: ${weeks.length}`}>
+              <CasesTrend rows={data.respiratory} weeks={weeks} territory={territory} />
+            </Card>
+          </div>
         )}
 
         <Vaccination rows={data.vaccination} week={week} />
@@ -685,24 +690,55 @@ function Intensity({ rows, total }: { rows: Row[]; total?: Row }) {
   );
 }
 
-function Trend({ rows, weeks, territory }: { rows: Row[]; weeks: string[]; territory: string | null }) {
+function IncidenceTrend({ rows, weeks, territory }: { rows: Row[]; weeks: string[]; territory: string | null }) {
   const d = weeks.map((w) => {
     const wr = rows.filter((r) => weekKey(r) === w);
     const r = territory ? wr.find((x) => x.administrative_territory === territory) : totalRow(wr);
-    return { name: `тиж. ${w.split("-")[1]}`, "Випадки": num(r?.cases_total), "Діти": num(r?.cases_children_under_18), "На 100 тис.": num(r?.incidence_per_100k) };
+    return {
+      name: `тиж. ${w.split("-")[1]} / ${w.split("-")[0]}`,
+      "На 100 тис.": num(r?.incidence_per_100k),
+      "Низький епідпоріг": num(r?.intensity_low_threshold),
+      "Середній поріг": num(r?.intensity_medium_threshold),
+      "Високий поріг": num(r?.intensity_high_threshold),
+    };
   });
   return (
-    <ResponsiveContainer width="100%" height={240}>
-      <LineChart data={d}>
+    <ResponsiveContainer width="100%" height={280}>
+      <LineChart data={d} margin={{ top: 8, right: 12, left: 4, bottom: 8 }}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="name" />
-        <YAxis yAxisId="a" />
-        <YAxis yAxisId="b" orientation="right" />
+        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+        <YAxis />
         <Tooltip formatter={(v: number) => fmt(v, 1)} />
         <Legend />
-        <Line yAxisId="a" dataKey="Випадки" stroke="var(--chart-1)" strokeWidth={2.5} />
-        <Line yAxisId="a" dataKey="Діти" stroke="var(--chart-2)" strokeWidth={2.5} />
-        <Line yAxisId="b" dataKey="На 100 тис." stroke="var(--chart-4)" strokeDasharray="5 4" strokeWidth={2} />
+        <Line type="monotone" dataKey="На 100 тис." stroke="var(--chart-1)" strokeWidth={2.5} connectNulls={false} dot={{ r: 3 }} />
+        <Line type="monotone" dataKey="Низький епідпоріг" stroke="var(--chart-2)" strokeDasharray="6 4" strokeWidth={1.8} dot={false} connectNulls={false} />
+        <Line type="monotone" dataKey="Середній поріг" stroke="var(--chart-3)" strokeDasharray="3 4" strokeWidth={1.8} dot={false} connectNulls={false} />
+        <Line type="monotone" dataKey="Високий поріг" stroke="var(--chart-4)" strokeDasharray="8 4" strokeWidth={1.8} dot={false} connectNulls={false} />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
+function CasesTrend({ rows, weeks, territory }: { rows: Row[]; weeks: string[]; territory: string | null }) {
+  const d = weeks.map((w) => {
+    const wr = rows.filter((r) => weekKey(r) === w);
+    const r = territory ? wr.find((x) => x.administrative_territory === territory) : totalRow(wr);
+    return {
+      name: `тиж. ${w.split("-")[1]} / ${w.split("-")[0]}`,
+      "Усього випадків": num(r?.cases_total),
+      "Діти до 18 років": num(r?.cases_children_under_18),
+    };
+  });
+  return (
+    <ResponsiveContainer width="100%" height={280}>
+      <LineChart data={d} margin={{ top: 8, right: 12, left: 4, bottom: 8 }}>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+        <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+        <YAxis allowDecimals={false} />
+        <Tooltip formatter={(v: number) => fmt(v)} />
+        <Legend />
+        <Line type="monotone" dataKey="Усього випадків" stroke="var(--chart-1)" strokeWidth={2.5} connectNulls={false} dot={{ r: 3 }} />
+        <Line type="monotone" dataKey="Діти до 18 років" stroke="var(--chart-2)" strokeWidth={2} connectNulls={false} dot={{ r: 3 }} />
       </LineChart>
     </ResponsiveContainer>
   );
