@@ -206,7 +206,6 @@ function Dashboard() {
 
         <Vaccination rows={data.vaccination} week={week} />
 
-<QualityNotes />
         <footer className="pb-6 text-center text-xs text-muted-foreground">
           Джерело: Google Sheets (weekly_respiratory, weekly_vaccination) · оновлено {new Date(data.fetchedAt).toLocaleString("uk-UA")}
         </footer>
