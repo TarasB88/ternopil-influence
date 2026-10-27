@@ -476,8 +476,25 @@ function RespiratorySituation({ week, sample, current, previous, fetchedAt }: { 
   const covid = optionalMetric(current, ["cases_covid19", "covid19_cases", "cases_covid"]);
   const prevCovid = optionalMetric(previous, ["cases_covid19", "covid19_cases", "cases_covid"]);
   const deaths = optionalMetric(current, ["deaths_total", "deaths_influenza_covid19", "deaths_flu_covid"]);
-  const tests = optionalMetric(current, ["lab_tests_total", "pcr_tested", "tested_by_pcr"]);
+  const optionalText = (row: Row | undefined, keys: string[]) => {
+    const key = keys.find((k) => row?.[k] !== undefined && row?.[k] !== null && String(row[k]).trim() !== "");
+    return key ? String(row?.[key]).trim() : null;
+  };
+  const tests = optionalMetric(current, [
+    "lab_tests_total", "pcr_tested", "tested_by_pcr", "pcr_tested_patients",
+    "pcr_examinations", "number_tested_pcr", "Обстежено методом ПЛР", "Обстежено ПЛР",
+    "Кількість обстежених методом ПЛР", "Обстежено хворих"
+  ]);
+  const pcrResult = optionalText(current, [
+    "pcr_results", "lab_results", "respiratory_virus_pcr_results", "pcr_result",
+    "Результати ПЛР", "Результати досліджень", "Результати", "Результати ПЛР на групу респіраторних вірусів"
+  ]);
   const pcrNegative = optionalMetric(current, ["lab_tests_negative", "pcr_negative", "negative_pcr_results"]);
+  const wastewaterResult = optionalText(current, [
+    "wastewater_monitoring", "wastewater_result", "wastewater_results", "sewage_monitoring",
+    "Моніторинг стічних вод", "Результати моніторингу стічних вод", "Стічні води",
+    "Результати дослідження стічних вод", "Стічні води SARS-CoV-2, грип А/В"
+  ]);
   const wastewater = optionalMetric(current, ["wastewater_samples_total", "wastewater_samples", "sewage_samples"]);
   const negativeWastewater = optionalMetric(current, ["wastewater_negative", "wastewater_negative_samples"]);
   const periodStart = sample?.period_start ? fmtDate(sample.period_start) : "—";
@@ -510,8 +527,8 @@ function RespiratorySituation({ week, sample, current, previous, fetchedAt }: { 
           <p>Госпіталізовано за звітний тиждень {hospital === null ? "—" : fmt(hospital)} осіб, із них {hospitalChildren === null ? "—" : fmt(hospitalChildren)} дітей ({fmtPct(hospitalChildShare)}%). Кількість госпіталізованих {direction(hospitalChange)} у порівнянні з минулим тижнем на {formatChange(hospitalChange)} (госпіталізовано {hospital === null ? "—" : fmt(hospital)} осіб проти {prevHospital === null ? "—" : fmt(prevHospital)}).</p>
           <p>За тиждень зареєстровано {covid === null ? "—" : fmt(covid)} випадків (дорослі) захворювання на COVID-19 (на минулому тижні – {prevCovid === null ? "—" : fmt(prevCovid)} випадків).</p>
           <p>{deaths === 0 ? "Летальних випадків від грипу та COVID-19 в області не зареєстровано." : deaths === null ? "Летальних випадків від грипу та COVID-19 в області: —." : `Зареєстровано ${fmt(deaths)} летальних випадків від грипу та COVID-19 в області.`}</p>
-          <p>У вірусологічній лабораторії ДУ «Тернопільський ОЦКПХ МОЗ» методом ПЛР на групу респіраторних вірусів за тиждень обстежено {tests === null ? "—" : fmt(tests)} хворих (результати {pcrNegative === null ? "—" : pcrNegative === tests ? "негативні" : `негативні: ${fmt(pcrNegative)}`}).</p>
-          <p>За результатами моніторингу стічних вод за тиждень {wastewater === null ? "—" : `усі ${fmt(wastewater)} проби`} {negativeWastewater === null ? "—" : negativeWastewater === wastewater ? "були негативні" : `негативні: ${fmt(negativeWastewater)} проб`} на віруси SARS-CoV-2, грипу А/В.</p>
+          <p>У вірусологічній лабораторії ДУ «Тернопільський ОЦКПХ МОЗ» методом ПЛР на групу респіраторних вірусів за тиждень обстежено {tests === null ? "—" : fmt(tests)} хворих (результати {pcrResult ?? (pcrNegative === null ? "—" : pcrNegative === tests ? "негативні" : `негативні: ${fmt(pcrNegative)}`)}).</p>
+          <p>За результатами моніторингу стічних вод за тиждень {wastewaterResult ?? (wastewater === null ? "—" : `усі ${fmt(wastewater)} проби`)} {wastewaterResult ? "" : (negativeWastewater === null ? "—" : negativeWastewater === wastewater ? "були негативні" : `негативні: ${fmt(negativeWastewater)} проб`)} на віруси SARS-CoV-2, грипу А/В.</p>
         </div>
       )}
     </Card>
