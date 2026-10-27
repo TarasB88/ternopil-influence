@@ -1,26 +1,26 @@
-# Influance
+# Епідмоніторинг Тернопільської області
 
-https://docs.google.com/spreadsheets/d/1Oxri7kz6UMFpkTENTjoQUHwY5yCuhczJY22c0K5fqbI/edit?gid=1951237247#gid=1951237247 ось джерело даних , ось технічне завдання і короткий зразок картинка, можна розширеніше, у даних є два аркуша, потім будуть дозаповнюватися
+Вебдашборд для щотижневого моніторингу грипу, ГРВІ, COVID-19, госпіталізацій, епідемічної інтенсивності та вакцинації.
 
-This project was built with [Lovable](https://lovable.dev).
+## Джерело даних
 
-**Live app**: https://influance.lovable.app
+Дані надходять із [Google Sheets](https://docs.google.com/spreadsheets/d/1Oxri7kz6UMFpkTENTjoQUHwY5yCuhczJY22c0K5fqbI/edit?gid=1951237247#gid=1951237247). Таблиця містить кілька аркушів, які можуть доповнюватися.
 
-## Build with Lovable
+## Розробка локально
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/016623f6-28e7-4d3c-9593-9b18ca549221).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Потрібні Bun і Git.
 
 ```sh
 git clone <this-repository-url>
 cd <repository-name>
-npm i
-npm run dev
+bun install
+bun run dev
 ```
+
+## Збірка та розгортання
+
+```sh
+bun run build
+```
+
+Розгортання налаштовано через GitHub Actions до Cloudflare Workers. Для роботи workflow у GitHub Actions мають бути налаштовані секрети `CLOUDFLARE_API_TOKEN` та `CLOUDFLARE_ACCOUNT_ID`.
