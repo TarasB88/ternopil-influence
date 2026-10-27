@@ -24,7 +24,9 @@ label{display:block;font-size:.82rem;font-weight:700;margin-bottom:6px;color:#4b
 footer{max-width:1200px;margin:auto;padding:0 20px 28px;color:#6b7e8d;font-size:.8rem}
 @media(max-width:800px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.two{grid-template-columns:1fr}.period{margin-left:0;width:100%}}
 @media(max-width:420px){.grid{grid-template-columns:1fr 1fr;gap:8px}.kpi{padding:12px}.container{padding:12px}.toolbar{padding:12px}select{width:100%}}
+#hromadaMap{height:520px;min-height:360px;border-radius:10px;overflow:hidden;background:#edf2f5}.map-legend{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 0;font-size:.84rem;color:#5f7484}.map-swatch{display:inline-block;width:12px;height:12px;border:1px solid #7392a3;border-radius:3px;margin-right:5px;vertical-align:-1px}.map-status{margin:0 0 10px}
 </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
 <body>
 <header>
@@ -54,14 +56,16 @@ footer{max-width:1200px;margin:auto;padding:0 20px 28px;color:#6b7e8d;font-size:
     <article class="card"><h2 data-i18n="covidTitle">COVID-19 та летальні випадки</h2><div id="covid"></div></article>
     <article class="card"><h2 data-i18n="labTitle">Лабораторний нагляд</h2><div id="lab"></div></article>
   </section>
+  <section class="card" aria-labelledby="mapTitle"><h2 id="mapTitle" data-i18n="mapTitle">Територіальна карта громад</h2><p class="note map-status" id="mapStatus">Карта показує межі 55 територіальних громад. Дані поточного звіту агреговані за районами, тому показники на рівні громад не розраховуються.</p><div id="hromadaMap" role="img" aria-label="Карта територіальних громад Тернопільської області"></div><div class="map-legend"><span><i class="map-swatch" style="background:#d9e7ef"></i>Громади поза вибраним районом</span><span><i class="map-swatch" style="background:#2d789f"></i>Вибраний район / територія</span></div></section>
   <section class="card"><h2 data-i18n="sourceTitle">Джерело та примітки</h2><p class="note" id="sourceNote"></p></section>
 </main>
 <footer data-i18n="footer">Інформаційний інструмент епідеміологічного моніторингу. Перед офіційним використанням перевірте значення за первинним звітом.</footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 let currentLanguage = 'uk';
 const i18n = {
-  uk: {eyebrow:'Епідеміологічний моніторинг',title:'Грип, ГРВІ та COVID-19',subtitle:'Тернопільська область · щотижневий звіт',territory:'Територія',period:'Звітний тиждень',refresh:'Оновити з Google Sheets',summaryTitle:'Епідситуація із захворюваності на грип, ГРВІ та COVID-19 у Тернопільській області',kpis:'Ключові показники',structureTitle:'Структура випадків',hospitalTitle:'Госпіталізації',covidTitle:'COVID-19 та летальні випадки',labTitle:'Лабораторний нагляд',sourceTitle:'Джерело та примітки',footer:'Інформаційний інструмент епідеміологічного моніторингу. Перед офіційним використанням перевірте значення за первинним звітом.',loading:'Завантаження онлайн-таблиці…',liveOk:'Дані отримано з Google Sheets. Перевіряю структуру колонок…',mapped:'Дашборд оновлено з Google Sheets.',mappingFailed:'Таблицю отримано, але автоматичне зіставлення колонок не підтверджено. Показано локальні дані. Заголовки: ',refreshFailed:'Не вдалося отримати онлайн-таблицю. Перевірте публікацію Google Sheets або з’єднання.',lastRefresh:'Остання перевірка джерела: ',noData:'Немає даних',week:'Тиждень',reportAsOf:'Станом на '},
-  en: {eyebrow:'Epidemiological surveillance',title:'Influenza, ARI and COVID-19',subtitle:'Ternopil Oblast · weekly report',territory:'Territory',period:'Reporting week',refresh:'Refresh from Google Sheets',summaryTitle:'Influenza, ARI and COVID-19 epidemiological situation in Ternopil Oblast',kpis:'Key indicators',structureTitle:'Case breakdown',hospitalTitle:'Hospitalizations',covidTitle:'COVID-19 and deaths',labTitle:'Laboratory surveillance',sourceTitle:'Source and notes',footer:'Epidemiological surveillance information tool. Verify values against the primary report before official use.',loading:'Loading online spreadsheet…',liveOk:'Online data received from Google Sheets. Checking column structure…',mapped:'Dashboard updated from Google Sheets.',mappingFailed:'Spreadsheet received, but column mapping could not be verified. Local data remain displayed. Headers: ',refreshFailed:'Could not retrieve the online spreadsheet. Check Google Sheets publishing or connection.',lastRefresh:'Last source check: ',noData:'No data',week:'Week',reportAsOf:'As of '}
+  uk: {eyebrow:'Епідеміологічний моніторинг',title:'Грип, ГРВІ та COVID-19',subtitle:'Тернопільська область · щотижневий звіт',territory:'Територія',period:'Звітний тиждень',refresh:'Оновити з Google Sheets',summaryTitle:'Епідситуація із захворюваності на грип, ГРВІ та COVID-19 у Тернопільській області',kpis:'Ключові показники',structureTitle:'Структура випадків',hospitalTitle:'Госпіталізації',covidTitle:'COVID-19 та летальні випадки',labTitle:'Лабораторний нагляд',sourceTitle:'Джерело та примітки',mapTitle:'Територіальна карта громад',footer:'Інформаційний інструмент епідеміологічного моніторингу. Перед офіційним використанням перевірте значення за первинним звітом.',loading:'Завантаження онлайн-таблиці…',liveOk:'Дані отримано з Google Sheets. Перевіряю структуру колонок…',mapped:'Дашборд оновлено з Google Sheets.',mappingFailed:'Таблицю отримано, але автоматичне зіставлення колонок не підтверджено. Показано локальні дані. Заголовки: ',refreshFailed:'Не вдалося отримати онлайн-таблицю. Перевірте публікацію Google Sheets або з’єднання.',lastRefresh:'Остання перевірка джерела: ',noData:'Немає даних',week:'Тиждень',reportAsOf:'Станом на '},
+  en: {eyebrow:'Epidemiological surveillance',title:'Influenza, ARI and COVID-19',subtitle:'Ternopil Oblast · weekly report',territory:'Territory',period:'Reporting week',refresh:'Refresh from Google Sheets',summaryTitle:'Influenza, ARI and COVID-19 epidemiological situation in Ternopil Oblast',kpis:'Key indicators',structureTitle:'Case breakdown',hospitalTitle:'Hospitalizations',covidTitle:'COVID-19 and deaths',labTitle:'Laboratory surveillance',sourceTitle:'Source and notes',mapTitle:'Community boundary map',footer:'Epidemiological surveillance information tool. Verify values against the primary report before official use.',loading:'Loading online spreadsheet…',liveOk:'Online data received from Google Sheets. Checking column structure…',mapped:'Dashboard updated from Google Sheets.',mappingFailed:'Spreadsheet received, but column mapping could not be verified. Local data remain displayed. Headers: ',refreshFailed:'Could not retrieve the online spreadsheet. Check Google Sheets publishing or connection.',lastRefresh:'Last source check: ',noData:'No data',week:'Week',reportAsOf:'As of '}
 };
 function setLanguage(lang) {
   currentLanguage = lang;
@@ -215,6 +219,44 @@ function refreshPeriodOptions(preferredKey){
   select.onchange=()=>{const selected=periods.find(p=>periodKey(p)===select.value);if(selected)render(selected,data.metadata);};
   render(chosen,data.metadata);
 }
+let hromadaMap=null,hromadaLayer=null,hromadaFeatures=[];
+async function initHromadaMap(){
+  const status=document.getElementById('mapStatus');
+  if(!window.L){status.textContent=currentLanguage==='uk'?'Бібліотека карти не завантажилась. Перевірте доступ до CDN.':'Map library failed to load. Check CDN access.';return;}
+  try{
+    const response=await fetch('/data/ternopil-hromadas.geojson',{cache:'force-cache'});
+    if(!response.ok)throw new Error('GeoJSON HTTP '+response.status);
+    const geo=await response.json();
+    if(geo.type!=='FeatureCollection'||!Array.isArray(geo.features)||geo.features.length===0)throw new Error('Invalid GeoJSON');
+    hromadaFeatures=geo.features;
+    hromadaMap=L.map('hromadaMap',{scrollWheelZoom:false}).setView([49.0,25.6],8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap contributors'}).addTo(hromadaMap);
+    hromadaLayer=L.geoJSON(geo,{style:feature=>hromadaStyle(feature),onEachFeature:(feature,layer)=>{
+      const p=feature.properties||{},name=p.ADM3_UA||'Громада',district=p.ADM2_UA||'';
+      layer.bindTooltip(name,{sticky:true});
+      layer.bindPopup('<strong>'+escapeMapText(name)+'</strong><br>'+escapeMapText(district)+' район<br><span style="color:#607587">Код: '+escapeMapText(p.ADM3_PCODE||'—')+'</span><br><em>Показники за громаду в поточному джерелі відсутні</em>');
+    }}).addTo(hromadaMap);
+    const bounds=hromadaLayer.getBounds();if(bounds.isValid())hromadaMap.fitBounds(bounds,{padding:[12,12]});
+    status.textContent=currentLanguage==='uk'?'Завантажено '+geo.features.length+' громад із public/data/ternopil-hromadas.geojson. Межі — довідкові; дані звіту наразі доступні за районами.':'Loaded '+geo.features.length+' communities from public/data/ternopil-hromadas.geojson. Boundaries are for reference; report data are currently available by district.';
+    updateHromadaMapSelection();
+    setTimeout(()=>hromadaMap&&hromadaMap.invalidateSize(),100);
+  }catch(error){
+    status.textContent=(currentLanguage==='uk'?'Не вдалося завантажити межі громад: ':'Could not load community boundaries: ')+error.message;
+    console.error(error);
+  }
+}
+function escapeMapText(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function hromadaStyle(feature){
+  const selected=document.getElementById('territorySelect')?.value||'Тернопільська область';
+  const p=feature.properties||{};
+  const districtMatch=selected==='Кременецький район'&&p.ADM2_UA==='Кременецький'||selected==='Чортківський район'&&p.ADM2_UA==='Чортківський'||selected==='Тернопільський район'&&p.ADM2_UA==='Тернопільський';
+  const cityMatch=/тернопіль/i.test(p.ADM3_UA||'')&&/міська/.test(p.ADM3_UA||'');
+  const highlighted=selected==='Тернопільська область'||districtMatch||(selected==='м. Тернопіль'&&cityMatch);
+  return {color:'#5e8194',weight:1,opacity:.9,fillColor:highlighted?'#2d789f':'#d9e7ef',fillOpacity:highlighted?.72:.58};
+}
+function updateHromadaMapSelection(){
+  if(hromadaLayer)hromadaLayer.setStyle(hromadaStyle);
+}
 async function init(){
   const response=await fetch('/data/weekly.json');
   if(!response.ok)throw new Error('Не вдалося завантажити дані');
@@ -230,6 +272,8 @@ async function init(){
   territorySelect.value='Тернопільська область';
   territorySelect.addEventListener('change',()=>refreshPeriodOptions(document.getElementById('periodSelect').value));
   refreshPeriodOptions();
+  initHromadaMap();
+  document.getElementById('territorySelect').addEventListener('change',updateHromadaMapSelection);
   document.getElementById('languageButton').addEventListener('click',()=>setLanguage(currentLanguage==='uk'?'en':'uk'));
   document.getElementById('refreshButton').addEventListener('click',refreshFromSheets);
   refreshFromSheets();
