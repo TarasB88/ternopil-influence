@@ -1,4 +1,5 @@
-const LEGACY_SOURCE_CSV_URL = "https://docs.google.com/spreadsheets/d/1Oxri7kz6UMFpkTENTjoQUHwY5yCuhczJY22c0K5fqbI/export?format=csv&gid=1951237247";
+const RESPIRATORY_DEFAULT_CSV_URL = "https://docs.google.com/spreadsheets/d/1Oxri7kz6UMFpkTENTjoQUHwY5yCuhczJY22c0K5fqbI/export?format=csv&gid=1951237247";
+const VACCINATION_CSV_URL = "";
 
 const SOURCE_CONFIG = {
   "/api/respiratory": "RESPIRATORY_CSV_URL",
@@ -27,7 +28,7 @@ export default {
     // New two-sheet integration is configured with Worker variables:
     // RESPIRATORY_CSV_URL and VACCINATION_CSV_URL. URLs must be published CSV exports.
     const configuredKey = SOURCE_CONFIG[url.pathname];
-    if (configuredKey && !env[configuredKey]) {
+    if (url.pathname === "/api/vaccination" && !env.VACCINATION_CSV_URL && !VACCINATION_CSV_URL) {
       return Response.json({
         status: "not_configured",
         message: "Set the " + configuredKey + " Worker variable to the published CSV URL for the matching sheet.",
@@ -38,7 +39,9 @@ export default {
     // Keep the legacy endpoint during migration; it is not the new two-sheet source.
     if (url.pathname === "/api/source" || configuredKey) {
       try {
-        const configuredUrl = configuredKey ? env[configuredKey] : LEGACY_SOURCE_CSV_URL;
+        const configuredUrl = configuredKey
+          ? (env[configuredKey] || (url.pathname === "/api/respiratory" ? RESPIRATORY_DEFAULT_CSV_URL : VACCINATION_CSV_URL))
+          : RESPIRATORY_DEFAULT_CSV_URL;
         const sourceUrl = new URL(configuredUrl);
         sourceUrl.searchParams.set("refresh", String(Date.now()));
         const upstream = await fetch(sourceUrl.toString(), {
