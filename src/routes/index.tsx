@@ -351,7 +351,7 @@ function TopEpidemiologyStatus({ current }: { current?: Row }) {
   const threshold = num(current?.intensity_low_threshold);
   const thresholdKnown = incidence !== null && threshold !== null;
   const exceeded = thresholdKnown && incidence >= threshold;
-  const level = current ? intensityLevel(current) : "nodata";
+  const level: Level = thresholdKnown && incidence < threshold ? "below" : current ? intensityLevel(current) : "nodata";
   const thresholdTone = !thresholdKnown
     ? "border-muted bg-muted/40"
     : exceeded
@@ -366,7 +366,7 @@ function TopEpidemiologyStatus({ current }: { current?: Row }) {
   };
   const thresholdText = !thresholdKnown ? "Немає даних для оцінки" : exceeded ? "Епідпоріг перевищено" : "Епідпоріг не перевищено";
   const levelText: Record<Level, string> = {
-    below: "Нижче епідемічного порогу",
+    below: "Фоновий",
     low: "Низький",
     medium: "Середній",
     high: "Високий",
