@@ -23,7 +23,7 @@ label{display:block;font-size:.82rem;font-weight:700;margin-bottom:6px;color:#4b
 .note{font-size:.86rem;color:#5f7484;line-height:1.5}.empty{padding:22px;text-align:center;color:#617789}
 footer{max-width:1200px;margin:auto;padding:0 20px 28px;color:#6b7e8d;font-size:.8rem}
 @media(max-width:800px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.two{grid-template-columns:1fr}.period{margin-left:0;width:100%}}
-.public-only{display:block}.expert-only{display:none}.expert-mode .public-only{display:none}.expert-mode .expert-only{display:block}
+.public-only{display:block}.expert-only{display:block}
 .donut-row{display:flex;align-items:center;gap:18px;margin:8px 0 18px}.donut{width:132px;height:132px;border-radius:50%;flex:0 0 auto;position:relative;background:conic-gradient(#2679a7 var(--child-share),#b7d8c7 0)}.donut:after{content:"";position:absolute;inset:25px;background:white;border-radius:50%}.donut-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:1;font-weight:800;font-size:1.1rem}.donut-legend{display:grid;gap:8px}.legend-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px}@media print{header,.toolbar,footer,.expert-only,#hromadaMap,.map-legend{display:none!important}body{background:#fff}.container{max-width:none;padding:0}.card,.kpi{box-shadow:none;break-inside:avoid}.public-only{display:block!important}}.status-panel{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.status-chip{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:10px 15px;font-weight:800;background:#e5f6ed;color:#176642}.status-dot{width:12px;height:12px;border-radius:50%;background:#24945f;box-shadow:0 0 0 4px #cceedd}.status-detail{color:#526b7b;line-height:1.5}
 .prevention-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.prevention-item{background:#f4f8fa;border:1px solid #e1ebf0;border-radius:12px;padding:14px}.prevention-item>span{font-size:1.6rem;display:block;margin-bottom:7px}.prevention-item strong{display:block;line-height:1.35}.prevention-item p{font-size:.88rem;color:#607587;margin:7px 0 0;line-height:1.45}
 .table-wrap{overflow:auto;max-width:100%}#expertTable{width:100%;border-collapse:collapse;font-size:.88rem}#expertTable th,#expertTable td{padding:10px;border-bottom:1px solid #e2eaf0;text-align:left;white-space:nowrap}#expertTable th{background:#f0f5f8;color:#35566b;position:sticky;top:0}.export-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
@@ -46,7 +46,6 @@ footer{max-width:1200px;margin:auto;padding:0 20px 28px;color:#6b7e8d;font-size:
     <div><label for="periodSelect" data-i18n="period">Звітний період</label><select id="periodSelect"></select></div>
     <button class="action primary" id="refreshButton" type="button" data-i18n="refresh">Оновити з Google Sheets</button>
     <button class="action secondary" id="languageButton" type="button" aria-label="Switch dashboard language">EN</button>
-    <button class="action secondary" id="modeButton" type="button" aria-pressed="false">Для фахівців</button>
     <div class="period" id="periodLabel" aria-live="polite"></div>
     <div class="status" id="refreshStatus" role="status" aria-live="polite"></div>
   </section>
@@ -532,12 +531,6 @@ async function refreshFromSheets(){
   finally{button.disabled=false;}
 }
 
-document.getElementById('modeButton')?.addEventListener('click',()=>{
-  const expert=!document.body.classList.contains('expert-mode');
-  document.body.classList.toggle('expert-mode',expert);
-  const button=document.getElementById('modeButton');button.setAttribute('aria-pressed',String(expert));button.textContent=expert?'Для громадян':'Для фахівців';
-  if(expert)renderExpertTable();
-});
 document.getElementById('exportCsv')?.addEventListener('click',exportTableCsv);
 document.getElementById('exportPdf')?.addEventListener('click',()=>window.print());
 
