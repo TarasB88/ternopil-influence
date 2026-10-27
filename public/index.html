@@ -592,7 +592,8 @@ async function refreshFromSheets(){
       obj.report_date=parseDate(columns.report_date>=0?row[columns.report_date]:'')||obj.period_end;
       if(obj.year==null&&obj.period_end)obj.year=Number(obj.period_end.slice(0,4));
       if(obj.week==null&&obj.period_end){const d=new Date(obj.period_end+'T12:00:00Z');const jan4=new Date(Date.UTC(d.getUTCFullYear(),0,4));const day=(d.getUTCDay()+6)%7;const thursday=new Date(d);thursday.setUTCDate(d.getUTCDate()-day+3);const firstThursday=new Date(jan4);firstThursday.setUTCDate(jan4.getUTCDate()-((jan4.getUTCDay()+6)%7)+3);obj.week=1+Math.round((thursday-firstThursday)/(7*86400000));}
-      if(obj.year!=null&&obj.week!=null&&(obj.cases_total!=null||obj.vaccinated_total!=null||obj.vaccinated_count!=null)){obj.year=Number(obj.year);obj.week=Number(obj.week);if(obj.record_type){const rt=String(obj.record_type).toLocaleLowerCase('uk-UA');obj.record_type=rt.includes('total')||rt.includes('підсум')||rt.includes('облас')?'total':rt.includes('district')||rt.includes('район')?'district':rt.includes('city')||rt.includes('міст')?'city':rt;}return obj;}return null;
+      const hasEpiValue=['cases_total','cases_children','cases_schoolchildren','hospitalized_total','hospitalized_children','incidence_per_100k','covid_cases','pcr_tested','pcr_positive','vaccinated_total','vaccinated_count','cases_age_under_1','cases_age_1_4','cases_age_5_9','cases_age_10_14','cases_age_15_17'].some(k=>obj[k]!=null);
+      if(obj.year!=null&&obj.week!=null&&hasEpiValue){obj.year=Number(obj.year);obj.week=Number(obj.week);if(obj.record_type){const rt=String(obj.record_type).toLocaleLowerCase('uk-UA');obj.record_type=rt.includes('total')||rt.includes('підсум')||rt.includes('облас')?'total':rt.includes('district')||rt.includes('район')?'district':rt.includes('city')||rt.includes('міст')?'city':rt;}return obj;}return null;
     }).filter(Boolean);
     // The generic parser can partially map a legacy report (e.g. only one district).
     // Prefer the legacy table parser whenever it recovers more territory rows.
@@ -610,7 +611,13 @@ async function refreshFromSheets(){
       territories.forEach(t=>{const o=document.createElement('option');o.value=t;o.textContent=t;territorySelect.appendChild(o);});
       territorySelect.value=territories.includes(previousTerritory)?previousTerritory:'Тернопільська область';
       refreshPeriodOptions();
-      window.lastSourceStatus=i18n[currentLanguage].mapped+' '+i18n[currentLanguage].lastRefresh+new Date().toLocaleTimeString(currentLanguage==='uk'?'uk-UA':'en-GB');
+      const mappedFields=Object.entries(columns).filter(([key,index])=>index>=0).map(([key])=>key);
+      const coreMissing=['territory','year','week','cases_total'].filter(key=>columns[key]==null||columns[key]<0);
+      const territoryCount=new Set(data.periods.map(p=>p.territory)).size;
+      const periodCount=new Set(data.periods.map(p=>String(p.year)+'-W'+String(p.week).padStart(2,'0'))).size;
+      const diagnostic='Підтягнуто рядків: '+data.periods.length+'; територій: '+territoryCount+'; тижнів: '+periodCount+'; розпізнано полів: '+mappedFields.length+'.';
+      const warning=coreMissing.length?' Не знайдено обов’язкові колонки: '+coreMissing.join(', ')+'. Перевірте заголовки джерела.':'';
+      window.lastSourceStatus=diagnostic+warning+' Оновлено: '+new Date().toLocaleTimeString(currentLanguage==='uk'?'uk-UA':'en-GB');
       status.textContent=window.lastSourceStatus;
     }else{
       window.lastSourceStatus=i18n[currentLanguage].mappingFailed;
