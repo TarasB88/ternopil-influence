@@ -2,7 +2,7 @@
   "metadata": {
     "title": "Епідеміологічна ситуація із захворюваності на грип, ГРВІ та COVID-19 у Тернопільській області",
     "source": "Наданий замовником текст звіту",
-    "note": "Початковий набір містить один звітний період. Історичні дані не додавалися."
+    "note": "Початковий набір містить один звітний період. Показники вікової структури, низького порогу інтенсивності та вакцинації внесені за наданим технічним завданням; перед офіційною публікацією звірити з Google Sheets."
   },
   "periods": [
     {
@@ -39,7 +39,14 @@
       "pcr_result_summary": "Усі 3 результати негативні",
       "wastewater_samples_total": 4,
       "wastewater_sars_cov2_positive": 0,
-      "wastewater_influenza_ab_positive": 0
+      "wastewater_influenza_ab_positive": 0,
+      "intensity_low_threshold": 575.86,
+      "cases_age_under_1": 105,
+      "cases_age_1_4": 507,
+      "cases_age_5_9": 737,
+      "cases_age_10_14": 692,
+      "cases_age_15_17": 464,
+      "vaccinated_total": 0
     }
   ]
 }
