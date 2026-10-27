@@ -23,6 +23,12 @@ label{display:block;font-size:.82rem;font-weight:700;margin-bottom:6px;color:#4b
 .note{font-size:.86rem;color:#5f7484;line-height:1.5}.empty{padding:22px;text-align:center;color:#617789}
 footer{max-width:1200px;margin:auto;padding:0 20px 28px;color:#6b7e8d;font-size:.8rem}
 @media(max-width:800px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.two{grid-template-columns:1fr}.period{margin-left:0;width:100%}}
+.public-only{display:block}.expert-only{display:none}.expert-mode .public-only{display:none}.expert-mode .expert-only{display:block}
+.status-panel{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.status-chip{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:10px 15px;font-weight:800;background:#e5f6ed;color:#176642}.status-dot{width:12px;height:12px;border-radius:50%;background:#24945f;box-shadow:0 0 0 4px #cceedd}.status-detail{color:#526b7b;line-height:1.5}
+.prevention-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.prevention-item{background:#f4f8fa;border:1px solid #e1ebf0;border-radius:12px;padding:14px}.prevention-item>span{font-size:1.6rem;display:block;margin-bottom:7px}.prevention-item strong{display:block;line-height:1.35}.prevention-item p{font-size:.88rem;color:#607587;margin:7px 0 0;line-height:1.45}
+.table-wrap{overflow:auto;max-width:100%}#expertTable{width:100%;border-collapse:collapse;font-size:.88rem}#expertTable th,#expertTable td{padding:10px;border-bottom:1px solid #e2eaf0;text-align:left;white-space:nowrap}#expertTable th{background:#f0f5f8;color:#35566b;position:sticky;top:0}.export-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+@media(max-width:700px){.prevention-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:420px){.prevention-grid{grid-template-columns:1fr}}
+
 @media(max-width:420px){.grid{grid-template-columns:1fr 1fr;gap:8px}.kpi{padding:12px}.container{padding:12px}.toolbar{padding:12px}select{width:100%}}
 #hromadaMap{height:520px;min-height:360px;border-radius:10px;overflow:hidden;background:#edf2f5}.map-legend{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 0;font-size:.84rem;color:#5f7484}.map-swatch{display:inline-block;width:12px;height:12px;border:1px solid #7392a3;border-radius:3px;margin-right:5px;vertical-align:-1px}.map-status{margin:0 0 10px}
 </style>
@@ -40,9 +46,24 @@ footer{max-width:1200px;margin:auto;padding:0 20px 28px;color:#6b7e8d;font-size:
     <div><label for="periodSelect" data-i18n="period">Звітний період</label><select id="periodSelect"></select></div>
     <button class="action primary" id="refreshButton" type="button" data-i18n="refresh">Оновити з Google Sheets</button>
     <button class="action secondary" id="languageButton" type="button" aria-label="Switch dashboard language">EN</button>
+    <button class="action secondary" id="modeButton" type="button" aria-pressed="false">Для фахівців</button>
     <div class="period" id="periodLabel" aria-live="polite"></div>
     <div class="status" id="refreshStatus" role="status" aria-live="polite"></div>
   </section>
+  <section class="card public-only" id="epidemicStatusCard"><h2>Статус епідемічної ситуації</h2><div id="epidemicStatus" class="status-panel"></div></section>
+  <section class="two public-only" id="ageVaccinationRow">
+    <article class="card"><h2>Вікова структура захворюваності</h2><div id="ageStructure"></div><p class="note">Вікові групи до 18 років і школярі є вкладеними показниками; їх не можна підсумовувати разом.</p></article>
+    <article class="card"><h2>Вакцинація проти грипу</h2><div id="vaccinationPanel"></div></article>
+  </section>
+  <section class="card public-only"><h2>Як захистити себе та близьких</h2><div class="prevention-grid">
+    <div class="prevention-item"><span>🧥</span><strong>Одягайтесь за погодою</strong><p>Уникайте переохолодження.</p></div>
+    <div class="prevention-item"><span>🪟</span><strong>Провітрюйте приміщення</strong><p>Регулярно оновлюйте повітря.</p></div>
+    <div class="prevention-item"><span>🥗</span><strong>Харчуйтеся раціонально</strong><p>Дотримуйтеся збалансованого харчування.</p></div>
+    <div class="prevention-item"><span>🧼</span><strong>Гігієна рук</strong><p>Дотримуйтеся гігієни рук і кашльового етикету.</p></div>
+    <div class="prevention-item"><span>💊</span><strong>Не приймайте антибіотики самостійно</strong><p>Антибіотики не діють на віруси; застосовуйте їх лише за призначенням лікаря.</p></div>
+    <div class="prevention-item"><span>🏠</span><strong>Захворіли — залишайтеся вдома</strong><p>Зв’яжіться із сімейним лікарем.</p></div>
+  </div></section>
+  <section class="card expert-only" id="expertTableCard"><h2>Деталізована таблиця для фахівців</h2><div class="export-actions"><button class="action secondary" id="exportCsv">Завантажити CSV</button><button class="action secondary" id="exportXlsx">Завантажити XLSX</button><button class="action secondary" id="exportPdf">Зберегти інфографіку у PDF</button></div><div class="table-wrap"><table id="expertTable"><thead><tr><th>Тиждень</th><th>Територія</th><th>Випадки</th><th>Діти</th><th>Школярі</th><th>Госпіталізовано</th><th>Інтенсивний показник</th><th>Епідпоріг</th><th>Вакциновано</th></tr></thead><tbody></tbody></table></div><p class="note">Підсумковий запис області не додається до суми районних/міських записів. Порожні значення показуються як «—».</p></section>
   <section class="card" aria-labelledby="summaryTitle">
     <h2 id="summaryTitle" data-i18n="summaryTitle">Епідситуація із захворюваності на грип, ГРВІ та COVID-19 у Тернопільській області</h2>
     <div class="summary" id="summary" aria-live="polite"></div>
@@ -102,8 +123,44 @@ function englishSourceText(value){
   for(const [pattern,replacement] of rules){if(pattern.test(s)) return s.replace(pattern,replacement);}
   return s;
 }
-function render(p,meta){
-  window.lastRenderedPeriod=p; window.lastRenderedMeta=meta;
+
+function displayValue(v){return v==null||v===''?'—':fmt(v);}
+function getAllDashboardPeriods(){return (window.liveSheetData||window.initialDashboardData)?.periods||[];}
+function updateNewPanels(p){
+  const total=p.cases_total, children=p.cases_children, adults=total!=null&&children!=null?total-children:null;
+  const childPct=total>0&&children!=null?children/total*100:null;
+  const threshold=p.intensity_low_threshold??p.threshold_low??p.epidemic_threshold_low??null;
+  const statusEl=document.getElementById('epidemicStatus');
+  if(statusEl){
+    if(p.incidence_per_100k==null||threshold==null){
+      statusEl.innerHTML='<span class="status-chip" style="background:#eef2f5;color:#526b7b"><span class="status-dot" style="background:#94a3ad;box-shadow:0 0 0 4px #e1e7eb"></span>Немає даних про епідпоріг</span><span class="status-detail">Для цієї території немає підтвердженого порогового значення. Обласний поріг не переноситься на райони.</span>';
+    }else{
+      const exceeded=p.incidence_per_100k>=threshold;
+      statusEl.innerHTML='<span class="status-chip" style="'+(exceeded?'background:#fff0e8;color:#9a3412':'')+'"><span class="status-dot" style="'+(exceeded?'background:#dc5b2b;box-shadow:0 0 0 4px #ffe0d1':'')+'"></span>'+(exceeded?'ЕПІДПОРОГІВ ДОСЯГНУТО':'НЕ ПЕРЕВИЩЕНО')+'</span><span class="status-detail">Інтенсивний показник: <strong>'+displayValue(p.incidence_per_100k)+'</strong> на 100 тис. населення. Поріг низької інтенсивності: <strong>'+displayValue(threshold)+'</strong>.</span>';
+    }
+  }
+  const ageRows=[['До 1 року',p.cases_age_under_1],['1–4 роки',p.cases_age_1_4],['5–9 років',p.cases_age_5_9],['10–14 років',p.cases_age_10_14],['15–17 років',p.cases_age_15_17]];
+  const age=document.getElementById('ageStructure');
+  if(age) age.innerHTML=ageRows.map(([label,value])=>'<div class="bar-row"><div class="bar-head"><span>'+label+'</span><strong>'+displayValue(value)+'</strong></div><div class="track"><div class="bar" style="width:'+(value!=null&&children>0?Math.min(100,value/children*100):0)+'%"></div></div></div>').join('')+'<div class="bar-row"><div class="bar-head"><span>Діти до 18 років — разом</span><strong>'+displayValue(children)+'</strong></div></div><div class="bar-row"><div class="bar-head"><span>Школярі (вкладена група)</span><strong>'+displayValue(p.cases_schoolchildren)+'</strong></div></div>';
+  const vaccination=document.getElementById('vaccinationPanel');
+  if(vaccination){
+    const n=p.vaccinated_total??p.vaccination_total??p.vaccinated??null;
+    vaccination.innerHTML='<div class="kpi"><div class="label">Щеплено проти грипу за звітний тиждень</div><div class="value">'+displayValue(n)+'</div><div class="note">'+(n===0?'У джерелі вказано підтверджене нульове значення, а не відсутність даних.':n==null?'Дані про вакцинацію не підтверджені для цього звітного періоду.':'осіб за даними джерела')+'</div></div>';
+  }
+  renderExpertTable();
+}
+function renderExpertTable(){
+  const body=document.querySelector('#expertTable tbody'); if(!body)return;
+  const rows=getAllDashboardPeriods().slice().sort((a,b)=>a.year-b.year||a.week-b.week||String(a.territory||'').localeCompare(String(b.territory||''),'uk'));
+  body.innerHTML=rows.map(p=>'<tr><td>'+displayValue(p.year)+' / '+displayValue(p.week)+'</td><td>'+escapeMapText(p.territory||'—')+'</td><td>'+displayValue(p.cases_total)+'</td><td>'+displayValue(p.cases_children)+'</td><td>'+displayValue(p.cases_schoolchildren)+'</td><td>'+displayValue(p.hospitalized_total)+'</td><td>'+displayValue(p.incidence_per_100k)+'</td><td>'+displayValue(p.intensity_low_threshold??p.threshold_low??null)+'</td><td>'+displayValue(p.vaccinated_total??p.vaccination_total??null)+'</td></tr>').join('');
+}
+function exportTableCsv(){
+  const rows=[['Рік','Тиждень','Територія','Випадки','Діти','Школярі','Госпіталізовано','Інтенсивний показник','Епідпоріг','Вакциновано'],...getAllDashboardPeriods().map(p=>[p.year,p.week,p.territory,p.cases_total,p.cases_children,p.cases_schoolchildren,p.hospitalized_total,p.incidence_per_100k,p.intensity_low_threshold??p.threshold_low,p.vaccinated_total??p.vaccination_total])];
+  const csv='\\uFEFF'+rows.map(r=>r.map(v=>{const x=v==null?'':String(v);return '"'+x.replace(/"/g,'""')+'"';}).join(';')).join('\\r\\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='ternopil-influence-data.csv';a.click();URL.revokeObjectURL(a.href);
+}
+\nfunction render(p,meta){
+  window.lastRenderedPeriod=p; window.lastRenderedMeta=meta; updateNewPanels(p);
   document.getElementById('periodLabel').textContent=i18n[currentLanguage].reportAsOf+dateShort(p.report_date);
   if(currentLanguage==='en'){
     const n=v=>v==null?'No data':fmt(v), pp=v=>v==null?'No data':(v>0?'+':'')+fmt(v)+'%';
@@ -431,7 +488,17 @@ async function refreshFromSheets(){
   }catch(e){window.lastSourceStatus=i18n[currentLanguage].refreshFailed;status.textContent=window.lastSourceStatus;console.error(e);}
   finally{button.disabled=false;}
 }
-init().catch(error=>{document.getElementById('summary').innerHTML='<p>Не вдалося завантажити дані. Перевірте файл public/data/weekly.json.</p>';console.error(error)});
+
+document.getElementById('modeButton')?.addEventListener('click',()=>{
+  const expert=!document.body.classList.contains('expert-mode');
+  document.body.classList.toggle('expert-mode',expert);
+  const button=document.getElementById('modeButton');button.setAttribute('aria-pressed',String(expert));button.textContent=expert?'Для громадян':'Для фахівців';
+  if(expert)renderExpertTable();
+});
+document.getElementById('exportCsv')?.addEventListener('click',exportTableCsv);
+document.getElementById('exportXlsx')?.addEventListener('click',()=>alert('Для XLSX потрібне підключення бібліотеки експорту. Наразі скористайтеся CSV.'));
+document.getElementById('exportPdf')?.addEventListener('click',()=>window.print());
+\ninit().catch(error=>{document.getElementById('summary').innerHTML='<p>Не вдалося завантажити дані. Перевірте файл public/data/weekly.json.</p>';console.error(error)});
 </script>
 </body>
 </html>
