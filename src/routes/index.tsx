@@ -49,7 +49,6 @@ function Dashboard() {
   const weeks = useMemo(() => listWeeks(data.respiratory), [data.respiratory]);
   const [week, setWeek] = useState(weeks[weeks.length - 1] ?? "");
   const [territory, setTerritory] = useState<string | null>(null);
-  const [showTotal, setShowTotal] = useState(false);
 
   const weekRows = data.respiratory.filter((r) => weekKey(r) === week);
   const terr = territorial(weekRows);
@@ -61,7 +60,7 @@ function Dashboard() {
     ? prevRows.find((r) => r.administrative_territory === territory)
     : totalRow(prevRows);
 
-  const resetAll = () => { setTerritory(null); setShowTotal(false); setWeek(weeks[weeks.length - 1] ?? ""); };
+  const resetAll = () => { setTerritory(null); setWeek(weeks[weeks.length - 1] ?? ""); };
   const sample = weekRows[0];
 
   return (
@@ -123,10 +122,6 @@ function Dashboard() {
               <option value="">Уся область</option>
               {terr.map((r) => <option key={r.administrative_territory!}>{r.administrative_territory}</option>)}
             </select>
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={showTotal} onChange={(e) => setShowTotal(e.target.checked)} />
-            Показувати підсумок у таблицях
           </label>
           <div className="ml-auto flex items-center gap-2">
             {territory && (
