@@ -154,7 +154,6 @@ function updateNewPanels(p){
     const n=p.vaccinated_total??p.vaccination_total??p.vaccinated??null;
     vaccination.innerHTML='<div class="kpi"><div class="label">Щеплено проти грипу за звітний тиждень</div><div class="value">'+displayValue(n)+'</div><div class="note">'+(n===0?'У джерелі вказано підтверджене нульове значення, а не відсутність даних.':n==null?'Дані про вакцинацію не підтверджені для цього звітного періоду.':'осіб за даними джерела')+'</div></div>';
   }
-  renderExpertTable();
 }
 function renderExpertTable(){
   const body=document.querySelector('#expertTable tbody'); if(!body)return;
