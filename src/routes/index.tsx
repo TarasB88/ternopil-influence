@@ -180,8 +180,8 @@ function Dashboard() {
           </Card>
         </div>
 
-        <Card title="Порівняння територій" sub="Значення джерела, без перерахунків">
-          <TerritoryTable rows={showTotal && total ? [...terr, total] : terr} selected={territory} onSelect={setTerritory} />
+        <Card title="Порівняння територій" sub="Території громад/районів і підсумок по Тернопільській області · значення джерела, без перерахунків">
+          <TerritoryTable rows={total ? [...terr, total] : terr} selected={territory} onSelect={setTerritory} />
         </Card>
 
         <div className="grid gap-6 lg:grid-cols-2">
