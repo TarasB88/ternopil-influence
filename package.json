@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "start": "wrangler dev"
+    "start": "wrangler dev",
+    "check": "node --check src/index.js && node --check scripts/validate-data.mjs && node scripts/validate-data.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"
