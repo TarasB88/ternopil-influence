@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 
 const SHEET_ID = "1Oxri7kz6UMFpkTENTjoQUHwY5yCuhczJY22c0K5fqbI";
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_sheets/v4";
+const RESPIRATORY_GID = "1951237247";
+const VACCINATION_GID = "1503721021";
 
 export type Row = Record<string, string | null>;
 export interface DashboardData {
@@ -11,41 +12,69 @@ export interface DashboardData {
   error?: string;
 }
 
-function toRows(values: string[][] | undefined): Row[] {
-  if (!values || values.length < 2) return [];
-  const [header, ...rest] = values;
-  return rest
-    .filter((r) => r.some((c) => c !== ""))
-    .map((r) => {
-      const o: Row = {};
-      header.forEach((h, i) => {
-        const v = r[i];
-        o[h] = v === undefined || v === "" || v === "-" ? null : v;
-      });
-      return o;
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let quoted = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"' && quoted && text[i + 1] === '"') {
+      cell += '"';
+      i++;
+    } else if (ch === '"') {
+      quoted = !quoted;
+    } else if (ch === "," && !quoted) {
+      row.push(cell);
+      cell = "";
+    } else if ((ch === "\n" || ch === "\r") && !quoted) {
+      if (ch === "\r" && text[i + 1] === "\n") i++;
+      row.push(cell);
+      if (row.some((v) => v.trim() !== "")) rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += ch;
+    }
+  }
+  row.push(cell);
+  if (row.some((v) => v.trim() !== "")) rows.push(row);
+  if (rows.length < 2) return [];
+  const headers = rows[0].map((h) => h.trim());
+  return rows.slice(1).map((values) => {
+    const result: Row = {};
+    headers.forEach((header, i) => {
+      const value = (values[i] ?? "").trim();
+      result[header] = value === "" || value === "-" ? null : value;
     });
+    return result;
+  });
+}
+
+async function fetchSheet(gid: string): Promise<Row[]> {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+  const response = await fetch(url, { headers: { Accept: "text/csv" } });
+  if (!response.ok) throw new Error(`Google Sheets returned HTTP ${response.status}`);
+  return parseCsv(await response.text());
 }
 
 export const getDashboardData = createServerFn({ method: "GET" }).handler(
   async (): Promise<DashboardData> => {
-    const lovable = process.env["LOVABLE_API_KEY"];
-    const conn = process.env["GOOGLE_SHEETS_API_KEY"];
     const fetchedAt = new Date().toISOString();
-    if (!lovable || !conn)
-      return { respiratory: [], vaccination: [], fetchedAt, error: "Не налаштовано доступ до таблиці" };
-    const url = `${GATEWAY_URL}/spreadsheets/${SHEET_ID}/values:batchGet?ranges=weekly_respiratory!A1:Z2000&ranges=weekly_vaccination!A1:Z5000`;
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": conn },
-    });
-    if (!res.ok) {
-      console.error(`Sheets ${res.status}: ${await res.text()}`);
-      return { respiratory: [], vaccination: [], fetchedAt, error: `Помилка джерела даних (${res.status})` };
+    try {
+      const [respiratory, vaccination] = await Promise.all([
+        fetchSheet(RESPIRATORY_GID),
+        fetchSheet(VACCINATION_GID),
+      ]);
+      return { respiratory, vaccination, fetchedAt };
+    } catch (error) {
+      console.error("Failed to load Google Sheets:", error);
+      return {
+        respiratory: [],
+        vaccination: [],
+        fetchedAt,
+        error: "Не вдалося завантажити дані з Google Sheets. Перевірте доступність джерела.",
+      };
     }
-    const j = (await res.json()) as { valueRanges: { values?: string[][] }[] };
-    return {
-      respiratory: toRows(j.valueRanges[0]?.values),
-      vaccination: toRows(j.valueRanges[1]?.values),
-      fetchedAt,
-    };
   },
 );
