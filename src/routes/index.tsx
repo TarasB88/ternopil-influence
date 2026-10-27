@@ -483,17 +483,19 @@ function RespiratorySituation({ week, sample, current, previous, fetchedAt }: { 
   const tests = optionalMetric(current, [
     "lab_tests_total", "pcr_tested", "tested_by_pcr", "pcr_tested_patients",
     "pcr_examinations", "number_tested_pcr", "Обстежено методом ПЛР", "Обстежено ПЛР",
-    "Кількість обстежених методом ПЛР", "Обстежено хворих"
+    "Кількість обстежених методом ПЛР", "Обстежено хворих",
+    "У вірусологічній лабораторії ДУ «Тернопільський ОЦКПХ МОЗ» методом ПЛР на групу респіраторних вірусів за тиждень обстежено"
   ]);
   const pcrResult = optionalText(current, [
     "pcr_results", "lab_results", "respiratory_virus_pcr_results", "pcr_result",
-    "Результати ПЛР", "Результати досліджень", "Результати", "Результати ПЛР на групу респіраторних вірусів"
+    "результати", "Результати ПЛР", "Результати досліджень", "Результати", "Результати ПЛР на групу респіраторних вірусів"
   ]);
   const pcrNegative = optionalMetric(current, ["lab_tests_negative", "pcr_negative", "negative_pcr_results"]);
   const wastewaterResult = optionalText(current, [
     "wastewater_monitoring", "wastewater_result", "wastewater_results", "sewage_monitoring",
     "Моніторинг стічних вод", "Результати моніторингу стічних вод", "Стічні води",
-    "Результати дослідження стічних вод", "Стічні води SARS-CoV-2, грип А/В"
+    "Результати дослідження стічних вод", "Стічні води SARS-CoV-2, грип А/В",
+    "За результатами моніторингу стічних вод за тиждень"
   ]);
   const wastewater = optionalMetric(current, ["wastewater_samples_total", "wastewater_samples", "sewage_samples"]);
   const negativeWastewater = optionalMetric(current, ["wastewater_negative", "wastewater_negative_samples"]);
