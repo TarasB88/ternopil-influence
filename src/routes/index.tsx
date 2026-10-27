@@ -675,10 +675,23 @@ function Intensity({ rows, total }: { rows: Row[]; total?: Row }) {
               <span className={r.record_type === "total" ? "font-semibold" : ""}>{r.record_type === "total" ? "Область (підсумок)" : r.administrative_territory}</span>
               <span className="font-medium">{fmt(num(r.incidence_per_100k), 1)}</span>
             </div>
-            <div className="relative h-3 rounded-full bg-muted">
-              <div className="h-3 rounded-full" style={{ width: `${(v / max) * 100}%`, background: LEVEL_COLOR[intensityLevel(r)] === LEVEL_COLOR.nodata ? "var(--chart-3)" : LEVEL_COLOR[intensityLevel(r)] }} />
+            <div className="relative h-4 rounded-full border border-border bg-muted/70">
+              <div className="h-full rounded-full" style={{ width: `${Math.min(100, (v / max) * 100)}%`, background: LEVEL_COLOR[intensityLevel(r)] === LEVEL_COLOR.nodata ? "var(--chart-3)" : LEVEL_COLOR[intensityLevel(r)] }} />
               {th.map((t, i) => t !== null && (
-                <div key={i} title={["Низький", "Середній", "Високий"][i] + ": " + fmt(t, 1)} className="absolute -top-1 h-5 w-0.5 bg-foreground/60" style={{ left: `${(t / max) * 100}%` }} />
+                <div
+                  key={i}
+                  title={["Низький епідпоріг", "Середній епідпоріг", "Високий епідпоріг"][i] + ": " + fmt(t, 1)}
+                  className="absolute -top-1.5 h-7 w-1 -translate-x-1/2 rounded-sm border border-background shadow-sm"
+                  style={{ left: `${Math.min(100, (t / max) * 100)}%`, background: ["#2563eb", "#d97706", "#dc2626"][i], zIndex: 2 }}
+                />
+              ))}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+              {th.map((t, i) => t !== null && (
+                <span key={i} className="inline-flex items-center gap-1.5 font-medium">
+                  <span className="inline-block h-3 w-1.5 rounded-sm" style={{ background: ["#2563eb", "#d97706", "#dc2626"][i] }} />
+                  {["Низький", "Середній", "Високий"][i]}: {fmt(t, 1)}
+                </span>
               ))}
             </div>
             <div className="mt-1"><LevelBadge l={intensityLevel(r)} /></div>
