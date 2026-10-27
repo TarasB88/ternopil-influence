@@ -588,6 +588,45 @@ async function refreshFromSheets(){
     const legacyMapped=parseLegacyWeeklyReport(rows);
     if(legacyMapped.length>mapped.length) mapped.splice(0,mapped.length,...legacyMapped);
     if(mapped.length){
+      // Vaccination is a separate source. Join only explicit weekly totals with matching year/week
+      // (and territory when both sources provide it); never sum brand/risk-group rows as totals.
+      let vaccinationDiagnostic='Дані вакцинації: не зіставлено з тижневими показниками.';
+      try{
+        const vr=await fetch('/api/vaccination?refresh='+Date.now(),{cache:'no-store'});
+        if(vr.ok){
+          const vrows=parseCSV(await vr.text());
+          if(vrows.length>1){
+            const vh=vrows[0].map(normalizeHeader);
+            const findCol=aliases=>vh.findIndex(h=>aliases.map(normalizeHeader).includes(h));
+            const vy=findCol(['Рік','Звітний рік','year']);
+            const vw=findCol(['Тиждень','Звітний тиждень','Епідемічний тиждень','week']);
+            const vt=findCol(['Територія','Адміністративна територія','Область','Регіон','territory']);
+            const vn=findCol(['vaccinated_total','Вакциновано всього','Всього щеплено','Щеплено проти грипу за звітний тиждень','Загальна кількість щеплених']);
+            if(vy>=0&&vw>=0&&vn>=0){
+              const vmap=new Map();
+              vrows.slice(1).forEach(row=>{
+                const year=parseNumber(row[vy]),week=parseNumber(row[vw]),n=parseNumber(row[vn]);
+                if(year==null||week==null||n==null)return;
+                const territory=vt>=0&&String(row[vt]||'').trim()?normalizeTerritory(row[vt]):'';
+                const key=year+'|'+week+'|'+territory;
+                if(!vmap.has(key))vmap.set(key,n);
+              });
+              let matched=0;
+              mapped.forEach(p=>{
+                const territory=normalizeTerritory(p.territory||'');
+                const exact=vmap.get(Number(p.year)+'|'+Number(p.week)+'|'+territory);
+                const oblast=vmap.get(Number(p.year)+'|'+Number(p.week)+'|Тернопільська область');
+                const general=vmap.get(Number(p.year)+'|'+Number(p.week)+'|');
+                const n=exact??(territory==='Тернопільська область'?oblast??general:null);
+                if(n!=null){p.vaccinated_total=n;matched++;}
+              });
+              vaccinationDiagnostic=matched?'Вакцинація зіставлена для '+matched+' рядків за відповідним роком і тижнем.':'Джерело вакцинації отримано, але немає точного збігу за роком, тижнем і територією.';
+            }else{
+              vaccinationDiagnostic='Джерело вакцинації доступне, але не знайдено явні колонки року, тижня та загальної кількості щеплених; агрегування не виконувалось.';
+            }
+          }else vaccinationDiagnostic='Джерело вакцинації порожнє або містить лише заголовок.';
+        }else vaccinationDiagnostic='Джерело вакцинації недоступне (HTTP '+vr.status+').';
+      }catch(vaccineError){vaccinationDiagnostic='Не вдалося прочитати джерело вакцинації.';console.warn(vaccineError);}
       const data={periods:enrichDashboardPeriods(mapped.map(p=>({...p,territory:p.territory||null}))),metadata:{source:'Google Sheets · '+new Date().toLocaleString(currentLanguage==='uk'?'uk-UA':'en-GB')}};
       window.liveSheetData=data;
       const territorySelect=document.getElementById('territorySelect');
@@ -603,7 +642,7 @@ async function refreshFromSheets(){
       const coreMissing=['territory','year','week','cases_total'].filter(key=>columns[key]==null||columns[key]<0);
       const territoryCount=new Set(data.periods.map(p=>p.territory)).size;
       const periodCount=new Set(data.periods.map(p=>String(p.year)+'-W'+String(p.week).padStart(2,'0'))).size;
-      const diagnostic='Підтягнуто рядків: '+data.periods.length+'; територій: '+territoryCount+'; тижнів: '+periodCount+'; розпізнано полів: '+mappedFields.length+'.';
+      const diagnostic='Підтягнуто рядків: '+data.periods.length+'; територій: '+territoryCount+'; тижнів: '+periodCount+'; розпізнано полів: '+mappedFields.length+'. '+vaccinationDiagnostic;
       const warning=coreMissing.length?' Не знайдено обов’язкові колонки: '+coreMissing.join(', ')+'. Перевірте заголовки джерела.':'';
       window.lastSourceStatus=diagnostic+warning+' Оновлено: '+new Date().toLocaleTimeString(currentLanguage==='uk'?'uk-UA':'en-GB');
       status.textContent=window.lastSourceStatus;
