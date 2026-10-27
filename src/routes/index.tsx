@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer,
   Tooltip, XAxis, YAxis, Legend,
@@ -129,6 +129,8 @@ function Dashboard() {
 
         <Kpis focus={focus} prev={prevFocus} prevWeek={prevWeek} label={territory ?? "Уся область"} />
 
+        <DistrictMap rows={terr} selected={territory} onSelect={setTerritory} />
+
         <div className="grid gap-6 lg:grid-cols-5">
           <Card className="lg:col-span-3" title="Випадки за територіями" sub="Клікніть стовпчик, щоб відфільтрувати. Підсумок не входить до ранжування.">
             <ResponsiveContainer width="100%" height={260}>
@@ -194,6 +196,130 @@ function Card({ title, sub, children, className = "" }: { title: string; sub?: s
   );
 }
 
+
+
+type GeoFeature = {
+  type: "Feature";
+  properties?: Record<string, unknown>;
+  geometry?: {
+    type: string;
+    coordinates: unknown;
+  };
+};
+
+function DistrictMap({ rows, selected, onSelect }: { rows: Row[]; selected: string | null; onSelect: (s: string | null) => void }) {
+  const [features, setFeatures] = useState<GeoFeature[]>([]);
+  const [geoError, setGeoError] = useState(false);
+  useEffect(() => {
+    let active = true;
+    fetch("https://raw.githubusercontent.com/slawomirmatuszak/ukrainian_geodata/main/rayony.geojson")
+      .then((r) => { if (!r.ok) throw new Error("GeoJSON unavailable"); return r.json(); })
+      .then((data: { features?: GeoFeature[] }) => {
+        if (!active) return;
+        const wanted = ["кременецький", "тернопільський", "чортківський"];
+        const found = (data.features ?? []).filter((f) => {
+          const props = Object.values(f.properties ?? {}).filter((v) => typeof v === "string").join(" ").toLocaleLowerCase("uk-UA");
+          return wanted.some((n) => props.includes(n)) && !!f.geometry;
+        });
+        setFeatures(found);
+        setGeoError(found.length === 0);
+      })
+      .catch(() => { if (active) setGeoError(true); });
+    return () => { active = false; };
+  }, []);
+
+  const selectedRows = [
+    { key: "кременецький", label: "Кременецький район", aliases: ["кременецький район", "кременецький"], color: "var(--chart-1)" },
+    { key: "тернопільський", label: "Тернопільський район", aliases: ["тернопільський район", "тернопільський"], color: "var(--chart-2)" },
+    { key: "чортківський", label: "Чортківський район", aliases: ["чортківський район", "чортківський"], color: "var(--chart-3)" },
+  ];
+  const findRow = (aliases: string[]) => rows.find((r) => aliases.some((a) => (r.administrative_territory ?? "").toLocaleLowerCase("uk-UA").includes(a)));
+  const cityRow = rows.find((r) => {
+    const n = (r.administrative_territory ?? "").toLocaleLowerCase("uk-UA");
+    return n.includes("терноп") && (n.includes("м.") || n.includes("місто") || n === "тернопіль");
+  });
+  const allCoords: number[][] = [];
+  const collect = (v: unknown): void => {
+    if (Array.isArray(v)) {
+      if (v.length >= 2 && typeof v[0] === "number" && typeof v[1] === "number") allCoords.push([v[0], v[1]]);
+      else v.forEach(collect);
+    }
+  };
+  features.forEach((f) => collect(f.geometry?.coordinates));
+  const minLon = allCoords.length ? Math.min(...allCoords.map((p) => p[0])) : 25.0;
+  const maxLon = allCoords.length ? Math.max(...allCoords.map((p) => p[0])) : 26.7;
+  const minLat = allCoords.length ? Math.min(...allCoords.map((p) => p[1])) : 48.5;
+  const maxLat = allCoords.length ? Math.max(...allCoords.map((p) => p[1])) : 50.3;
+  const project = (coord: number[]) => {
+    const x = 30 + ((coord[0] - minLon) / Math.max(0.0001, maxLon - minLon)) * 840;
+    const y = 25 + ((maxLat - coord[1]) / Math.max(0.0001, maxLat - minLat)) * 510;
+    return [x, y];
+  };
+  const ringsToPath = (coordinates: unknown): string => {
+    const paths: string[] = [];
+    const walk = (v: unknown): void => {
+      if (!Array.isArray(v)) return;
+      if (v.length >= 2 && typeof v[0] === "number" && typeof v[1] === "number") return;
+      if (v.length && Array.isArray(v[0]) && typeof v[0][0] === "number" && typeof v[0][1] === "number") {
+        const pts = (v as number[][]).map(project);
+        if (pts.length) paths.push("M " + pts.map((p) => p.join(" ")).join(" L ") + " Z");
+      } else v.forEach(walk);
+    };
+    walk(coordinates);
+    return paths.join(" ");
+  };
+  const featureLabel = (f: GeoFeature) => Object.values(f.properties ?? {}).find((v) => typeof v === "string" && ["кременецький", "тернопільський", "чортківський"].some((n) => v.toLocaleLowerCase("uk-UA").includes(n))) as string | undefined;
+  const getFeatureGroup = (f: GeoFeature) => {
+    const label = (featureLabel(f) ?? Object.values(f.properties ?? {}).join(" ")).toLocaleLowerCase("uk-UA");
+    return selectedRows.find((d) => label.includes(d.key));
+  };
+  const cityPoint = project([25.5948, 49.5535]);
+  const citySelected = !!selected && !!cityRow && selected === cityRow.administrative_territory;
+
+  return (
+    <Card title="Карта епідемічної ситуації за районами та м. Тернопіль" sub="Окремий блок · межі районів за відкритими GeoJSON-даними · виберіть територію для фільтрації показників">
+      {geoError ? (
+        <p className="text-sm text-muted-foreground">Не вдалося завантажити географічні межі. Перевірте підключення до джерела GeoJSON.</p>
+      ) : features.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Завантаження географічних меж районів…</p>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(220px,1fr)]">
+          <div className="min-w-0 overflow-hidden rounded-lg border bg-muted/20">
+            <svg viewBox="0 0 900 560" role="img" aria-label="Карта Кременецького, Тернопільського, Чортківського районів і міста Тернополя" className="h-auto w-full">
+              {features.map((f, i) => {
+                const group = getFeatureGroup(f);
+                const row = group ? findRow(group.aliases) : undefined;
+                const level = row ? intensityLevel(row) : "nodata";
+                const fill = row ? LEVEL_COLOR[level] : "var(--muted-foreground)";
+                return <path key={i} d={ringsToPath(f.geometry?.coordinates)} fill={fill} fillOpacity={selected && group && !group.aliases.some((a) => selected.toLocaleLowerCase("uk-UA").includes(a)) ? 0.28 : 0.65} stroke="var(--border)" strokeWidth="1.8" vectorEffect="non-scaling-stroke" className="cursor-pointer transition-opacity hover:opacity-90" onClick={() => group && row && onSelect(selected === row.administrative_territory ? null : row.administrative_territory ?? null)}><title>{group?.label ?? featureLabel(f) ?? "Район"} · {row ? fmt(num(row.cases_total)) + " випадків; " + fmt(num(row.incidence_per_100k), 1) + " на 100 тис." : "немає відповідного рядка даних"}</title></path>;
+              })}
+              <line x1={cityPoint[0] - 7} y1={cityPoint[1]} x2={cityPoint[0] + 7} y2={cityPoint[1]} stroke="var(--foreground)" strokeWidth="2.5" />
+              <line x1={cityPoint[0]} y1={cityPoint[1] - 7} x2={cityPoint[0]} y2={cityPoint[1] + 7} stroke="var(--foreground)" strokeWidth="2.5" />
+              <circle cx={cityPoint[0]} cy={cityPoint[1]} r="5" fill={cityRow ? LEVEL_COLOR[intensityLevel(cityRow)] : "var(--primary)"} stroke="var(--background)" strokeWidth="2" />
+              <text x={cityPoint[0] + 10} y={cityPoint[1] - 10} fontSize="15" fontWeight="700" fill="var(--foreground)" stroke="var(--background)" strokeWidth="3" paintOrder="stroke">м. Тернопіль</text>
+            </svg>
+          </div>
+          <div className="space-y-3">
+            {selectedRows.map((group) => {
+              const row = findRow(group.aliases);
+              const active = !!row && selected === row.administrative_territory;
+              return <button key={group.key} onClick={() => row && onSelect(active ? null : row.administrative_territory ?? null)} className={`w-full rounded-lg border p-3 text-left transition-colors hover:bg-muted/60 ${active ? "border-primary bg-accent" : "bg-card"}`}>
+                <div className="flex items-center gap-2 text-sm font-semibold"><span className="h-3 w-3 shrink-0 rounded-sm" style={{ background: row ? LEVEL_COLOR[intensityLevel(row)] : group.color }} />{group.label}</div>
+                <div className="mt-2 grid grid-cols-2 gap-2 text-xs"><span className="text-muted-foreground">Випадки</span><strong className="text-right">{fmt(num(row?.cases_total))}</strong><span className="text-muted-foreground">На 100 тис.</span><strong className="text-right">{fmt(num(row?.incidence_per_100k), 1)}</strong><span className="text-muted-foreground">Рівень</span><span className="text-right">{row ? levelLabel[intensityLevel(row)] : "Немає даних"}</span></div>
+              </button>;
+            })}
+            <button onClick={() => cityRow && onSelect(citySelected ? null : cityRow.administrative_territory ?? null)} className={`w-full rounded-lg border p-3 text-left transition-colors hover:bg-muted/60 ${citySelected ? "border-primary bg-accent" : "bg-card"}`}>
+              <div className="flex items-center gap-2 text-sm font-semibold"><span className="h-3 w-3 shrink-0 rounded-full" style={{ background: cityRow ? LEVEL_COLOR[intensityLevel(cityRow)] : "var(--primary)" }} />м. Тернопіль</div>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-xs"><span className="text-muted-foreground">Випадки</span><strong className="text-right">{fmt(num(cityRow?.cases_total))}</strong><span className="text-muted-foreground">На 100 тис.</span><strong className="text-right">{fmt(num(cityRow?.incidence_per_100k), 1)}</strong><span className="text-muted-foreground">Рівень</span><span className="text-right">{cityRow ? levelLabel[intensityLevel(cityRow)] : "Немає окремого рядка"}</span></div>
+            </button>
+            <p className="text-xs text-muted-foreground">Колір відображає інтенсивність лише за наявності порогів у джерелі. Дані карти відповідають вибраному тижню.</p>
+            <p className="text-xs text-muted-foreground">Геодані: <a className="underline" href="https://github.com/slawomirmatuszak/ukrainian_geodata" target="_blank" rel="noreferrer">Ukrainian geodata (CC BY 4.0)</a>. Маркер міста — координати центру Тернополя; це не адміністративний контур міста.</p>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
 
 function RespiratorySituation({ week, sample, current, previous, fetchedAt }: { week: string; sample?: Row; current?: Row; previous?: Row; fetchedAt: string }) {
   const n = (row: Row | undefined, key: string) => num(row?.[key]);
