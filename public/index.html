@@ -33,9 +33,12 @@ footer{max-width:1200px;margin:auto;padding:0 20px 28px;color:#6b7e8d;font-size:
   <p data-i18n="subtitle">Тернопільська область · щотижневий звіт</p>
 </header>
 <main class="container">
-  <section class="toolbar" aria-label="Фільтр звітного періоду">
-    <div><label for="periodSelect">Звітний період</label><select id="periodSelect"></select></div>
+  <section class="toolbar" aria-label="Reporting period and data controls">
+    <div><label for="periodSelect" data-i18n="period">Звітний період</label><select id="periodSelect"></select></div>
+    <button class="action primary" id="refreshButton" type="button" data-i18n="refresh">Оновити з Google Sheets</button>
+    <button class="action secondary" id="languageButton" type="button" aria-label="Switch dashboard language">EN</button>
     <div class="period" id="periodLabel" aria-live="polite"></div>
+    <div class="status" id="refreshStatus" role="status" aria-live="polite"></div>
   </section>
   <section class="card" aria-labelledby="summaryTitle">
     <h2 id="summaryTitle" data-i18n="summaryTitle">Епідситуація із захворюваності на грип, ГРВІ та COVID-19 у Тернопільській області</h2>
@@ -159,6 +162,10 @@ async function init(){
   const update=()=>render(byKey.get(select.value),data.metadata);
   select.addEventListener('change',update);
   update();
+  document.getElementById('languageButton').addEventListener('click',()=>setLanguage(currentLanguage==='uk'?'en':'uk'));
+  document.getElementById('refreshButton').addEventListener('click',refreshFromSheets);
+  // Automatically check the online source on each page load, not only on button click.
+  refreshFromSheets();
 }
 function parseCSV(text) {
   const rows=[]; let row=[], field='', quoted=false;
