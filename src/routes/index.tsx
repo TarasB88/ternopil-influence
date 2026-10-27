@@ -125,7 +125,7 @@ function Dashboard() {
           </div>
         )}
 
-        <RespiratorySituation week={week} sample={sample} />
+        <RespiratorySituation week={week} sample={sample} current={total} previous={totalRow(prevRows)} fetchedAt={data.fetchedAt} />
 
         <Kpis focus={focus} prev={prevFocus} prevWeek={prevWeek} label={territory ?? "Уся область"} />
 
@@ -195,34 +195,72 @@ function Card({ title, sub, children, className = "" }: { title: string; sub?: s
 }
 
 
-function RespiratorySituation({ week, sample }: { week: string; sample?: Row }) {
-  // Confirmed narrative report currently supplied for epidemiological week 43 of 2026.
-  // Never reuse its figures for other reporting periods.
-  const reportWeek = "2026-43";
-  const isAvailable = week === reportWeek;
-  const period = sample
-    ? `${fmtDate(sample.period_start ?? null)} – ${fmtDate(sample.period_end ?? null)}`
-    : "Період не визначено";
+function RespiratorySituation({ week, sample, current, previous, fetchedAt }: { week: string; sample?: Row; current?: Row; previous?: Row; fetchedAt: string }) {
+  const change = (now: number | null, before: number | null) =>
+    now === null || before === null ? null : before === 0 ? (now === 0 ? 0 : null) : ((now - before) / before) * 100;
+  const trendText = (now: number | null, before: number | null, noun: string) => {
+    const p = change(now, before);
+    if (p === null) return "порівняння з попереднім тижнем неможливе через відсутні дані або нульове попереднє значення";
+    if (p === 0) return "залишилася без змін порівняно з попереднім тижнем";
+    return `${p > 0 ? "зросла" : "знизилася"} на ${fmt(Math.abs(p), 1)}% порівняно з попереднім тижнем`;
+  };
+  const n = (key: string) => num(current?.[key]);
+  const p = (key: string) => num(previous?.[key]);
+  const cases = n("cases_total");
+  const prevCases = p("cases_total");
+  const children = n("cases_children_under_18");
+  const schoolchildren = n("cases_schoolchildren");
+  const hospital = n("hospitalized_total");
+  const hospitalChildren = n("hospitalized_children");
+  const incidence = n("incidence_per_100k");
+  const lowThreshold = n("intensity_low_threshold");
+  const belowThreshold = incidence !== null && lowThreshold !== null
+    ? ((lowThreshold - incidence) / lowThreshold) * 100
+    : null;
+  const childShare = cases !== null && cases > 0 && children !== null ? children / cases * 100 : null;
+  const schoolShare = children !== null && children > 0 && schoolchildren !== null ? schoolchildren / children * 100 : null;
+  const reportDate = sample?.period_end ? fmtDate(sample.period_end) : "дата не вказана";
+  const period = sample ? `${fmtDate(sample.period_start ?? null)} – ${fmtDate(sample.period_end ?? null)}` : "немає даних";
+  const optionalMetric = (keys: string[]) => {
+    const key = keys.find((k) => current?.[k] !== undefined);
+    return key ? num(current?.[key]) : null;
+  };
+  const covid = optionalMetric(["cases_covid19", "covid19_cases", "cases_covid"]);
+  const deaths = optionalMetric(["deaths_total", "deaths_influenza_covid19", "deaths_flu_covid"]);
+  const tests = optionalMetric(["lab_tests_total", "pcr_tested", "tested_by_pcr"]);
+  const wastewater = optionalMetric(["wastewater_samples_total", "wastewater_samples", "sewage_samples"]);
+  const negativeWastewater = optionalMetric(["wastewater_negative", "wastewater_negative_samples"]);
+  const pct = (v: number | null) => v === null ? null : fmt(v, 1);
+  const fmtDateGenerated = new Date(fetchedAt).toLocaleDateString("uk-UA");
 
   return (
-    <Card
-      title="Епідситуація із захворюваності на грип, ГРВІ та COVID-19 у Тернопільській області"
-      sub={isAvailable ? `Останній підтверджений інформаційний звіт · станом на 26.10.2026 · ${period}` : `Обраний період: ${week.replace("-", " / тиж. ")} · ${period}`}
-    >
-      {isAvailable ? (
-        <div className="space-y-4 text-sm leading-7">
-          <p>Інформуємо про результати епідеміологічного моніторингу за грипом, ГРВІ та COVID-19 станом на 26.10.2026 року.</p>
-          <p>Загальна захворюваність на грип, ГРВІ та COVID-19 за останні 7 днів склала <strong>388,3 випадки на 100 тисяч населення</strong> (захворіло <strong>3955 осіб</strong>), що на <strong>32,6%</strong> нижче епідемічного порогу низької інтенсивності.</p>
-          <p>За останній (43) тиждень (19.10–25.10.2026) кількість захворілих на ГРВІ у порівнянні з попереднім тижнем зросла на <strong>7,6%</strong> (3955 випадків проти 3675). Питома вага дітей серед хворих склала <strong>63,3%</strong> (2505 осіб), школярів — <strong>58,9%</strong> (1476 осіб) від усіх захворілих дітей. У порівнянні з попереднім тижнем кількість хворих дітей зросла на <strong>10,6%</strong> (2505 проти 2265), школярів — на <strong>4,6%</strong> (1476 проти 1411).</p>
-          <p>Госпіталізовано за звітний тиждень <strong>62 особи</strong>, із них 29 дітей (46,8%). Кількість госпіталізованих зменшилась на 1,6% (62 особи проти 63).</p>
-          <p>За тиждень зареєстровано <strong>2 випадки COVID-19</strong> серед дорослих (на минулому тижні — 0 випадків).</p>
-          <p>Летальних випадків від грипу та COVID-19 в області не зареєстровано.</p>
-          <p>У вірусологічній лабораторії ДУ «Тернопільський ОЦКПХ МОЗ» методом ПЛР на групу респіраторних вірусів за тиждень обстежено 3 хворих; результати негативні.</p>
-          <p>За результатами моніторингу стічних вод за тиждень усі 4 проби були негативні на віруси SARS-CoV-2 та грипу А/В.</p>
-        </div>
+    <Card title="Епідситуація із захворюваності на грип, ГРВІ та COVID-19 у Тернопільській області"
+      sub={`Автоматичний аналіз даних · звітний період: ${period} · дані завантажено ${fmtDateGenerated}`}>
+      {!current ? (
+        <p className="text-sm text-muted-foreground">Для вибраного періоду немає підсумкового рядка. Перевірте дані джерела.</p>
       ) : (
-        <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-          Для цього періоду ще не додано окремий затверджений текст епідеміологічного звіту. Щоб уникнути перенесення показників з іншого тижня, наративні дані не показуються. Після внесення звіту за обраний тиждень цей блок відображатиме відповідний текст.
+        <div className="space-y-4 text-sm leading-7">
+          <p>Інформуємо про результати епідеміологічного моніторингу за грипом, ГРВІ та COVID-19 за період <strong>{period}</strong> (звітний тиждень {sample?.week ?? week.split("-")[1]}, {sample?.year ?? week.split("-")[0]} року).</p>
+          <p>
+            {cases === null ? "Загальна кількість випадків не зазначена у джерелі." : <>За звітний тиждень зареєстровано <strong>{fmt(cases)} випадків</strong> грипу, ГРВІ та COVID-19</>}
+            {incidence !== null ? <>; інтенсивний показник становить <strong>{fmt(incidence, 1)} на 100 тис. населення</strong></> : null}
+            {belowThreshold !== null && lowThreshold !== null ? <>. Це на <strong>{fmt(Math.abs(belowThreshold), 1)}%</strong> {belowThreshold >= 0 ? "нижче" : "вище"} порога низької інтенсивності.</> : <>. Порівняння з епідемічним порогом не сформовано, оскільки поріг відсутній у даних.</>}
+          </p>
+          <p>
+            {cases !== null && prevCases !== null ? <>Порівняно з попереднім тижнем кількість випадків {trendText(cases, prevCases, "випадків")} ({fmt(cases)} проти {fmt(prevCases)}).</> : "Порівняння загальної захворюваності з попереднім тижнем недоступне через відсутність даних."}
+            {children !== null ? <> Питома вага дітей до 18 років становить <strong>{childShare === null ? "—" : `${pct(childShare)}%`}</strong> ({fmt(children)} ос.).</> : null}
+            {schoolchildren !== null ? <> Школярі — <strong>{schoolShare === null ? "—" : `${pct(schoolShare)}%`}</strong> від дітей до 18 років ({fmt(schoolchildren)} ос.).</> : null}
+          </p>
+          {children !== null && p("cases_children_under_18") !== null ? <p>Кількість випадків серед дітей {trendText(children, p("cases_children_under_18"), "дітей")} ({fmt(children)} проти {fmt(p("cases_children_under_18"))}).</p> : null}
+          <p>
+            {hospital === null ? "Кількість госпіталізованих у джерелі не зазначена." : <>За звітний тиждень госпіталізовано <strong>{fmt(hospital)} осіб</strong>{hospitalChildren !== null ? `, із них дітей — ${fmt(hospitalChildren)} (${hospital > 0 ? fmt(hospitalChildren / hospital * 100, 1) + "%" : "—"}).` : "."}</>}
+            {hospital !== null && p("hospitalized_total") !== null ? <> Порівняно з попереднім тижнем кількість госпіталізованих {trendText(hospital, p("hospitalized_total"), "госпіталізованих")}.</> : null}
+          </p>
+          {covid !== null ? <p>За звітний тиждень зареєстровано {fmt(covid)} випадків COVID-19 згідно з окремим показником у джерелі.</p> : null}
+          {deaths !== null ? <p>Зареєстровано {fmt(deaths)} летальних випадків за показником, наявним у джерелі.</p> : null}
+          {tests !== null ? <p>У лабораторії обстежено {fmt(tests)} осіб/зразків за доступним у джерелі показником.</p> : null}
+          {wastewater !== null ? <p>Моніторинг стічних вод: досліджено {fmt(wastewater)} проб{negativeWastewater !== null ? `, з них негативних — ${fmt(negativeWastewater)}.` : "."}</p> : null}
+          <p className="border-t pt-3 text-xs leading-5 text-muted-foreground">Текст сформовано автоматично з підсумкового рядка таблиці за вибраний тиждень. Згадуються лише показники, наявні в джерелі; відсутні значення не замінюються нулями. Перед офіційним оприлюдненням рекомендована перевірка відповідальною особою.</p>
         </div>
       )}
     </Card>
