@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { Script } from "node:vm";
 
 function readJson(path) {
   try {
@@ -8,6 +9,24 @@ function readJson(path) {
     process.exitCode = 1;
     return null;
   }
+}
+
+
+const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
+const inlineScripts = [...html.matchAll(/<script\\b(?![^>]*\\bsrc=)[^>]*>([\\s\\S]*?)<\\/script>/gi)];
+if (!inlineScripts.length) {
+  console.error("FAIL public/index.html: no inline JavaScript found to syntax-check");
+  process.exitCode = 1;
+} else {
+  for (const [i, match] of inlineScripts.entries()) {
+    try {
+      new Script(match[1], { filename: `public/index.html inline script #${i + 1}` });
+    } catch (error) {
+      console.error(`FAIL public/index.html inline script #${i + 1}: ${error.message}`);
+      process.exitCode = 1;
+    }
+  }
+  if (!process.exitCode) console.log(`JavaScript syntax: ${inlineScripts.length} inline script block(s) passed`);
 }
 
 const weekly = readJson("../public/data/weekly.json");
