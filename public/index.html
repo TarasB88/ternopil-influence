@@ -433,7 +433,10 @@ function parseLegacyWeeklyReport(rows){
       if(!territoryRaw)continue;
       const territory=normalizeTerritory(territoryRaw);
       const isTotal=/^(?:всього|усього|разом)(?:\s*\(.*\))?\s*:?$/i.test(territoryRaw)||territory==='Тернопільська область';
-      if(!isTotal&&!['Кременецький район','Чортківський район','Тернопільський район','м. Тернопіль'].includes(territory))continue;
+      // Keep every named territory found in the source table. The previous
+      // allow-list silently discarded communities and any additional territory rows.
+      if(/^(?:адміністративно-територіальна одиниця|адмінтериторія|територія|разом за областю)$/i.test(territoryRaw))continue;
+      if(!isTotal && territory.length<2)continue;
       const value=i=>i==null?null:parseNumber(row[i]);
       const casesTotal=value(ix.cases_total);
       if(casesTotal==null)continue;
