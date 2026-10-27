@@ -168,7 +168,7 @@ function exportTableCsv(){
 }
 
 function render(p,meta){
-  window.lastRenderedPeriod=p; window.lastRenderedMeta=meta; updateNewPanels(p);
+  window.lastRenderedPeriod=p; window.lastRenderedMeta=meta; updateNewPanels(p); renderExpertTable();
   document.getElementById('periodLabel').textContent=i18n[currentLanguage].reportAsOf+dateShort(p.report_date);
   if(currentLanguage==='en'){
     const n=v=>v==null?'No data':fmt(v), pp=v=>v==null?'No data':(v>0?'+':'')+fmt(v)+'%';
