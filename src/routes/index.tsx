@@ -649,12 +649,11 @@ function TerritoryTable({ rows, selected, onSelect }: { rows: Row[]; selected: s
         <thead className="text-left text-xs uppercase text-muted-foreground">
           <tr className="border-b">
             <th className="py-2">Територія</th><th>Тип</th><th className="text-right">Випадки</th><th className="text-right">Діти</th>
-            <th className="text-right">Госпіт.</th><th className="text-right">Госпіт. діти</th><th className="text-right">На 100 тис.</th><th className="pl-4">Рівень</th>
+            <th className="text-right">Госпіт.</th><th className="text-right">Госпіт. діти</th><th className="text-right">На 100 тис.</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r) => {
-            const lv = intensityLevel(r);
             const isTotal = r.record_type === "total";
             return (
               <tr key={r.administrative_territory!}
@@ -667,7 +666,6 @@ function TerritoryTable({ rows, selected, onSelect }: { rows: Row[]; selected: s
                 <td className="text-right">{fmt(num(r.hospitalized_total))}</td>
                 <td className="text-right">{fmt(num(r.hospitalized_children))}</td>
                 <td className="text-right font-medium">{fmt(num(r.incidence_per_100k), 1)}</td>
-                <td className="pl-4"><LevelBadge l={lv} /></td>
               </tr>
             );
           })}
