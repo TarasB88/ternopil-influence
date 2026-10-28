@@ -135,6 +135,14 @@ const EN: Record<string, string> = {
   "Епідмоніторинг Тернопільщини": "Epidemiological monitoring in Ternopil Oblast",
   "Щотижневі дані про грип, ГРВІ, COVID-19 та вакцинацію.": "Weekly data on influenza, ARI, COVID-19 and vaccination.",
   "Доступно тижнів": "Weeks available",
+  "дані завантажено": "data loaded",
+  "Доступно тижнів": "Weeks available",
+  "Епідситуація із захворюваності на грип, ГРВІ та COVID-19 у Тернопільській області": "Epidemiological situation: influenza, ARI and COVID-19 in Ternopil Oblast",
+  "до попереднього тижня": "compared with the previous week",
+  "тиждень": "week",
+  "Досягнуто порогу високої інтенсивності": "High-intensity threshold reached",
+  "Досягнуто порогу середньої інтенсивності": "Medium-intensity threshold reached",
+  "Досягнуто порогу низької інтенсивності": "Low-intensity threshold reached",
   "Джерело": "Source",
   "Оновлено": "Updated",
   "Епідемічні пороги показані окремими лініями": "Epidemic thresholds are shown as separate lines",
@@ -718,21 +726,21 @@ function RespiratorySituation({ week, sample, current, previous, fetchedAt }: { 
   const schoolChange = deltaPct(schoolchildren, prevSchoolchildren);
   const hospitalChange = deltaPct(hospital, prevHospital);
   const formatChange = (d: number | null) => d === null ? "—" : `${fmt(Math.abs(d), 1)}%`;
-  const direction = (d: number | null) => d === null ? "—" : d > 0 ? "зросла" : d < 0 ? "зменшилась" : "не змінилась";
-  const dateLoaded = new Date(fetchedAt).toLocaleDateString("uk-UA");
+  const direction = (d: number | null) => d === null ? "—" : language === "en" ? (d > 0 ? "increased" : d < 0 ? "decreased" : "did not change") : d > 0 ? "зросла" : d < 0 ? "зменшилась" : "не змінилась";
+  const dateLoaded = new Date(fetchedAt).toLocaleDateString(language === "en" ? "en-GB" : "uk-UA");
 
   return (
-    <Card title="Епідситуація із захворюваності на грип, ГРВІ та COVID-19 у Тернопільській області"
-      sub={`Звітний період: ${period} · дані завантажено ${dateLoaded}`}>
+    <Card title={tr("Епідситуація із захворюваності на грип, ГРВІ та COVID-19 у Тернопільській області")}
+      sub={`${tr("Звітний період")}: ${period} · ${tr("дані завантажено")} ${dateLoaded}`}>
       {!current ? (
         <p className="text-sm text-muted-foreground">{tr("Для вибраного періоду немає підсумкового рядка в джерелі даних.")}</p>
       ) : (
         <div className="flex flex-col gap-[1pt] text-sm leading-7">
-          <p>Інформуємо про результати епідеміологічного моніторингу за грипом, ГРВІ та COVID-19 станом на {reportingDate}.</p>
-          <p>Загальна захворюваність на грип, ГРВІ та COVID-19 за останні 7 днів склала {incidenceText} випадки на 100 тисяч населення (захворіло {totalCasesText} осіб), що на {lowThresholdText} епідемічного порогу низької інтенсивності.</p>
-          <p>За останній ({sample?.week ?? week.split("-")[1] ?? "—"}) тиждень ({reportDay}) кількість захворілих ГРВІ у порівнянні з попереднім тижнем {direction(pctChange)} на {formatChange(pctChange)} ({totalCasesText} випадків проти {prevCases === null ? "—" : fmt(prevCases)}). Питома вага дітей серед хворих склала {fmtPct(childShare)}% ({children === null ? "—" : fmt(children)} ос.), школярів – {fmtPct(schoolShare)}% ({schoolchildren === null ? "—" : fmt(schoolchildren)} ос.) від усіх захворілих дітей. У порівнянні з попереднім тижнем відмічається {direction(childrenChange)} кількість хворих на ГРВІ дітей на {formatChange(childrenChange)} ({children === null ? "—" : fmt(children)} випадків проти {prevChildren === null ? "—" : fmt(prevChildren)}), школярів – {direction(schoolChange)} на {formatChange(schoolChange)} ({schoolchildren === null ? "—" : fmt(schoolchildren)} випадків проти {prevSchoolchildren === null ? "—" : fmt(prevSchoolchildren)}).</p>
-          <p>Госпіталізовано за звітний тиждень {hospital === null ? "—" : fmt(hospital)} осіб, із них {hospitalChildren === null ? "—" : fmt(hospitalChildren)} дітей ({fmtPct(hospitalChildShare)}%). Кількість госпіталізованих {direction(hospitalChange)} у порівнянні з минулим тижнем на {formatChange(hospitalChange)} (госпіталізовано {hospital === null ? "—" : fmt(hospital)} осіб проти {prevHospital === null ? "—" : fmt(prevHospital)}).</p>
-          <p>За тиждень зареєстровано {covid === null ? "—" : fmt(covid)} {caseWord(covid)} (дорослі) захворювання на COVID-19 (на минулому тижні – {prevCovid === null ? "—" : fmt(prevCovid)} {caseWord(prevCovid)}).</p>
+          <p>{language === "en" ? `This report summarises epidemiological monitoring of influenza, acute respiratory infections (ARI) and COVID-19 as of ${reportingDate}.` : `Інформуємо про результати епідеміологічного моніторингу за грипом, ГРВІ та COVID-19 станом на ${reportingDate}.`}</p>
+          <p>{language === "en" ? `The overall incidence of influenza, ARI and COVID-19 over the past 7 days was ${incidenceText} cases per 100,000 population (${totalCasesText} people affected), ${belowThreshold === null ? "with no low-intensity epidemic-threshold comparison available" : `${fmt(Math.abs(belowThreshold), 1)}% ${belowThreshold >= 0 ? "below" : "above"} the low-intensity epidemic threshold`}.` : `Загальна захворюваність на грип, ГРВІ та COVID-19 за останні 7 днів склала ${incidenceText} випадки на 100 тисяч населення (захворіло ${totalCasesText} осіб), що на ${lowThresholdText} епідемічного порогу низької інтенсивності.`}</p>
+          <p>{language === "en" ? `In reporting week ${sample?.week ?? week.split("-")[1] ?? "—"} (${reportDay}), ARI cases ${pctChange === null ? "could not be compared with the previous week" : `${pctChange > 0 ? "increased" : pctChange < 0 ? "decreased" : "did not change"} by ${formatChange(pctChange)}`} (${totalCasesText} compared with ${prevCases === null ? "—" : fmt(prevCases)}). Children accounted for ${fmtPct(childShare)}% of cases (${children === null ? "—" : fmt(children)}); schoolchildren accounted for ${fmtPct(schoolShare)}% of cases among children (${schoolchildren === null ? "—" : fmt(schoolchildren)}). Compared with the previous week, ARI cases among children ${childrenChange === null ? "could not be compared" : `${childrenChange > 0 ? "increased" : childrenChange < 0 ? "decreased" : "did not change"} by ${formatChange(childrenChange)}`} (${children === null ? "—" : fmt(children)} versus ${prevChildren === null ? "—" : fmt(prevChildren)}); cases among schoolchildren ${schoolChange === null ? "could not be compared" : `${schoolChange > 0 ? "increased" : schoolChange < 0 ? "decreased" : "did not change"} by ${formatChange(schoolChange)}`} (${schoolchildren === null ? "—" : fmt(schoolchildren)} versus ${prevSchoolchildren === null ? "—" : fmt(prevSchoolchildren)}).` : `За останній (${sample?.week ?? week.split("-")[1] ?? "—"}) тиждень (${reportDay}) кількість захворілих ГРВІ у порівнянні з попереднім тижнем ${direction(pctChange)} на ${formatChange(pctChange)} (${totalCasesText} випадків проти ${prevCases === null ? "—" : fmt(prevCases)}). Питома вага дітей серед хворих склала ${fmtPct(childShare)}% (${children === null ? "—" : fmt(children)} ос.), школярів – ${fmtPct(schoolShare)}% (${schoolchildren === null ? "—" : fmt(schoolchildren)} ос.) від усіх захворілих дітей. У порівнянні з попереднім тижнем відмічається ${direction(childrenChange)} кількість хворих на ГРВІ дітей на ${formatChange(childrenChange)} (${children === null ? "—" : fmt(children)} випадків проти ${prevChildren === null ? "—" : fmt(prevChildren)}), школярів – ${direction(schoolChange)} на ${formatChange(schoolChange)} (${schoolchildren === null ? "—" : fmt(schoolchildren)} випадків проти ${prevSchoolchildren === null ? "—" : fmt(prevSchoolchildren)}).`}</p>
+          <p>{language === "en" ? `${hospital === null ? "—" : fmt(hospital)} people were hospitalised during the reporting week, including ${hospitalChildren === null ? "—" : fmt(hospitalChildren)} children (${fmtPct(hospitalChildShare)}%). Hospitalisations ${hospitalChange === null ? "could not be compared with the previous week" : `${hospitalChange > 0 ? "increased" : hospitalChange < 0 ? "decreased" : "did not change"} by ${formatChange(hospitalChange)}`} (${hospital === null ? "—" : fmt(hospital)} versus ${prevHospital === null ? "—" : fmt(prevHospital)}).` : `Госпіталізовано за звітний тиждень ${hospital === null ? "—" : fmt(hospital)} осіб, із них ${hospitalChildren === null ? "—" : fmt(hospitalChildren)} дітей (${fmtPct(hospitalChildShare)}%). Кількість госпіталізованих ${direction(hospitalChange)} у порівнянні з минулим тижнем на ${formatChange(hospitalChange)} (госпіталізовано ${hospital === null ? "—" : fmt(hospital)} осіб проти ${prevHospital === null ? "—" : fmt(prevHospital)}).`}</p>
+          <p>{language === "en" ? `${covid === null ? "—" : fmt(covid)} adult COVID-19 cases were reported this week (previous week: ${prevCovid === null ? "—" : fmt(prevCovid)}).` : `За тиждень зареєстровано ${covid === null ? "—" : fmt(covid)} ${caseWord(covid)} (дорослі) захворювання на COVID-19 (на минулому тижні – ${prevCovid === null ? "—" : fmt(prevCovid)} ${caseWord(prevCovid)}).`}</p>
         </div>
       )}
     </Card>
@@ -754,7 +762,7 @@ function OblastIndicator({ current, previous, week }: { current?: Row; previous?
   const incidenceChange = change(incidence, previousIncidence);
   const casesChange = change(cases, previousCases);
   const changeLabel = (value: number | null) =>
-    value === null ? "немає даних для порівняння" : `${value > 0 ? "+" : ""}${fmt(value, 1)}% до попереднього тижня`;
+    value === null ? tr("немає даних для порівняння") : `${value > 0 ? "+" : ""}${fmt(value, 1)}% ${tr("до попереднього тижня")}`;
   const thresholdLabel = incidence === null || low === null
     ? "Порівняння з епідемічним порогом: немає даних"
     : incidence < low
@@ -767,7 +775,7 @@ function OblastIndicator({ current, previous, week }: { current?: Row; previous?
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="section-title">{tr("Обласний показник")}</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">Тернопільська область · тиждень {week.split("-")[1] ?? "—"}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{tr("Тернопільська область")} · {tr("тиждень")} {week.split("-")[1] ?? "—"}</p>
         </div>
         <LevelBadge l={level} />
       </div>
@@ -791,7 +799,7 @@ function OblastIndicator({ current, previous, week }: { current?: Row; previous?
           <div className="text-xs text-muted-foreground">{tr("Епідемічний поріг")}</div>
           <div className="mt-1 text-base font-semibold">{thresholdLabel}</div>
           <div className="mt-1 text-xs text-muted-foreground">
-            {low === null ? "Пороги відсутні в джерелі" : `Низький: ${fmt(low, 1)}${medium === null ? "" : ` · середній: ${fmt(medium, 1)}`}${high === null ? "" : ` · високий: ${fmt(high, 1)}`}`}
+            {low === null ? tr("Пороги відсутні в джерелі") : `${tr("Низький")}: ${fmt(low, 1)}${medium === null ? "" : ` · ${tr("Середній")}: ${fmt(medium, 1)}`}${high === null ? "" : ` · ${tr("Високий")}: ${fmt(high, 1)}`}`}
           </div>
         </div>
       </div>
@@ -829,7 +837,7 @@ function Kpis({ focus, prev, prevWeek, label }: { focus?: Row; prev?: Row; prevW
 function ChildAdult({ r }: { r?: Row }) {
   const all = num(r?.cases_total), ch = num(r?.cases_children_under_18);
   if (all === null || ch === null) return <p className="text-sm text-muted-foreground">{tr("Немає даних")}</p>;
-  const d = [{ name: "Діти до 18", value: ch }, { name: "Дорослі", value: all - ch }];
+  const d = [{ name: tr("Діти до 18"), value: ch }, { name: tr("Дорослі"), value: all - ch }];
   return (
     <div className="flex items-center gap-4">
       <ResponsiveContainer width="55%" height={220}>
@@ -890,7 +898,7 @@ function LevelBadge({ l }: { l: Level }) {
   return (
     <span className="inline-flex items-center gap-1.5 text-xs">
       <span className="h-2.5 w-2.5 rounded-full" style={{ background: LEVEL_COLOR[l] }} />
-      <span className={l === "nodata" ? "text-muted-foreground" : ""}>{levelLabel[l]}</span>
+      <span className={l === "nodata" ? "text-muted-foreground" : ""}>{tr(levelLabel[l])}</span>
     </span>
   );
 }
@@ -933,7 +941,7 @@ function Intensity({ total }: { total?: Row }) {
       <div>
         <div className="mb-1 flex justify-between gap-3 text-sm">
           <span className="font-semibold">{tr("Тернопільська область")}</span>
-          <span className="font-semibold">{fmt(num(r.incidence_per_100k), 1)} на 100 тис.</span>
+          <span className="font-semibold">{fmt(num(r.incidence_per_100k), 1)} {tr("на 100 тис.")}</span>
         </div>
         <div className="relative h-4 rounded-full border border-border bg-muted/70">
           <div className="h-full rounded-full" style={{ width: `${Math.min(100, (v / max) * 100)}%`, background: LEVEL_COLOR[intensityLevel(r)] === LEVEL_COLOR.nodata ? "var(--chart-3)" : LEVEL_COLOR[intensityLevel(r)] }} />
