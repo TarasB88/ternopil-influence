@@ -34,11 +34,11 @@ export function intensityLevel(r: Row): Level {
 }
 
 export const levelLabel: Record<Level, string> = {
-  below: "Нижче епідпорогу",
-  low: "Низький",
-  medium: "Середній",
-  high: "Високий",
-  nodata: "Немає даних про пороги",
+  below: (typeof document !== "undefined" && document.documentElement.lang === "en") ? "Below epidemic threshold" : "Нижче епідпорогу",
+  low: (typeof document !== "undefined" && document.documentElement.lang === "en") ? "Low" : "Низький",
+  medium: (typeof document !== "undefined" && document.documentElement.lang === "en") ? "Medium" : "Середній",
+  high: (typeof document !== "undefined" && document.documentElement.lang === "en") ? "High" : "Високий",
+  nodata: (typeof document !== "undefined" && document.documentElement.lang === "en") ? "Threshold data unavailable" : "Немає даних про пороги",
 };
 
 export const AGE_GROUPS = [
