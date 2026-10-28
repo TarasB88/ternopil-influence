@@ -133,6 +133,8 @@ const EN: Record<string, string> = {
   "тиж.": "wk",
   "поріг": "threshold",
   "дані завантажено": "data loaded",
+  "Не вдалося завантажити дані з Google Sheets. Перевірте доступність джерела.": "Could not load data from Google Sheets. Check source availability.",
+  "Немає даних про рівень інтенсивності": "Intensity level unavailable",
   "Нижче епідпорогу": "Below epidemic threshold",
   "Немає даних про пороги": "Threshold data unavailable",
   "Немає даних для оцінки": "Insufficient data for assessment",
@@ -174,6 +176,9 @@ const EN: Record<string, string> = {
   "Колір показує захворюваність на 100 тис. населення; натисніть район для фільтрації.": "Colour indicates incidence per 100,000 population; click a district to filter.",
   "Карта Кременецького, Тернопільського, Чортківського районів і міста Тернополя": "Map of Kremenets, Ternopil and Chortkiv districts and Ternopil city",
   "Район": "District",
+  "район": "district",
+  "місто": "city",
+  "підсумок": "total",
   "немає відповідного рядка даних": "no matching data row",
   "Немає окремого рядка": "No separate record",
   "Епідситуація із захворюваності на грип, ГРВІ та COVID-19 у Тернопільській області": "Epidemiological situation: influenza, ARI and COVID-19 in Ternopil Oblast",
@@ -189,7 +194,7 @@ const EN: Record<string, string> = {
   "Вагітні": "Pregnant people",
   "Інші групи ризику": "Other risk groups"
 
-  "Language": "Мова",
+  "Language": "Language",
 const tr = (text: string) => {
   if (uiLanguage !== "en") return text;
   if (EN[text]) return EN[text];
@@ -343,7 +348,7 @@ function Dashboard() {
 
         <TopEpidemiologyStatus current={total} />
 
-        <RespiratorySituation week={week} sample={sample} current={total} previous={totalRow(prevRows)} fetchedAt={data.fetchedAt} />
+        <RespiratorySituation week={week} sample={sample} current={total} previous={totalRow(prevRows)} fetchedAt={data.fetchedAt} language={language} />
 
 
         <Kpis focus={focus} prev={prevFocus} prevWeek={prevWeek} label={territory ? tr(territory) : tr("Уся область")} />
@@ -632,7 +637,7 @@ function TopEpidemiologyStatus({ current }: { current?: Row }) {
   );
 }
 
-function RespiratorySituation({ week, sample, current, previous, fetchedAt }: { week: string; sample?: Row; current?: Row; previous?: Row; fetchedAt: string }) {
+function RespiratorySituation({ week, sample, current, previous, fetchedAt, language }: { week: string; sample?: Row; current?: Row; previous?: Row; fetchedAt: string; language: UiLanguage }) {
   const n = (row: Row | undefined, key: string) => num(row?.[key]);
   const normalizeMetricKey = (value: string) =>
     value.normalize("NFKC").trim().replace(/\s+/g, " ").toLocaleLowerCase("uk-UA");
@@ -793,7 +798,7 @@ function OblastIndicator({ current, previous, week }: { current?: Row; previous?
         </div>
         <div className="rounded-lg bg-muted/60 p-4">
           <div className="text-xs text-muted-foreground">{tr("Епідемічний поріг")}</div>
-          <div className="mt-1 text-base font-semibold">{thresholdLabel}</div>
+          <div className="mt-1 text-base font-semibold">{tr(thresholdLabel)}</div>
           <div className="mt-1 text-xs text-muted-foreground">
             {low === null ? tr("Пороги відсутні в джерелі") : `${tr("Низький")}: ${fmt(low, 1)}${medium === null ? "" : ` · ${tr("Середній")}: ${fmt(medium, 1)}`}${high === null ? "" : ` · ${tr("Високий")}: ${fmt(high, 1)}`}`}
           </div>
@@ -1132,14 +1137,14 @@ function DataTable({ rows }: { rows: Row[] }) {
           <thead className="sticky top-0 bg-secondary text-secondary-foreground">
             <tr>{cols.map((c) => (
               <th key={c} className="cursor-pointer px-2 py-2 text-left font-medium" onClick={() => setSort({ k: c, dir: sort?.k === c ? (-sort.dir as 1 | -1) : 1 })}>
-                <span className="inline-flex items-center gap-1">{c}<ArrowUpDown className="h-3 w-3 opacity-50" /></span>
+                <span className="inline-flex items-center gap-1">{tr(c)}<ArrowUpDown className="h-3 w-3 opacity-50" /></span>
               </th>
             ))}</tr>
           </thead>
           <tbody>
             {filtered.map((r, i) => (
               <tr key={i} className={`border-t ${r.record_type === "total" ? "bg-muted font-semibold" : ""}`}>
-                {cols.map((c) => <td key={c} className={`px-2 py-1.5 ${r[c] === null ? "text-muted-foreground italic" : ""}`}>{r[c] ?? "—"}</td>)}
+                {cols.map((c) => <td key={c} className={`px-2 py-1.5 ${r[c] === null ? "text-muted-foreground italic" : ""}`}>{r[c] === null ? "—" : c === "administrative_territory" ? tr(r[c] ?? "") : r[c]}</td>)}
               </tr>
             ))}
           </tbody>
