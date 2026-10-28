@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import {
   Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer,
   Tooltip, XAxis, YAxis, Legend,
@@ -280,8 +280,8 @@ function Dashboard() {
   const [territory, setTerritory] = useState<string | null>(null);
   const [language, setLanguage] = useState<UiLanguage>("uk");
   const [languageReady, setLanguageReady] = useState(false);
-  // Render Ukrainian first (including SSR/hydration), then restore a saved preference.
-  useEffect(() => {
+  // Restore the saved language before the browser paints to avoid a brief language flash.
+  useLayoutEffect(() => {
     let savedLanguage: UiLanguage = "uk";
     try {
       savedLanguage = window.localStorage.getItem("dashboard-language") === "en" ? "en" : "uk";
