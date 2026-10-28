@@ -189,8 +189,14 @@ const EN: Record<string, string> = {
   "Вагітні": "Pregnant people",
   "Інші групи ризику": "Other risk groups"
 
+  "Language": "Мова",
+const tr = (text: string) => {
+  if (uiLanguage !== "en") return text;
+  if (EN[text]) return EN[text];
+  if (text.endsWith(" район")) return text.slice(0, -" район".length) + " District";
+  if (text.endsWith(" територіальна громада")) return text.slice(0, -" територіальна громада".length) + " Territorial Hromada";
+  return text;
 };
-const tr = (text: string) => uiLanguage === "en" ? (EN[text] ?? text) : text;
 
 const dataQuery = queryOptions({
   queryKey: ["dashboard"],
@@ -281,7 +287,7 @@ function Dashboard() {
             <div className="w-full rounded-2xl border border-white/15 bg-slate-950/25 p-4 shadow-xl backdrop-blur-sm sm:w-auto sm:min-w-[260px]">
               <div className="flex items-center justify-between gap-4">
                 <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-cyan-100/75"><CalendarDays className="h-4 w-4" /> {tr("Звітний період")}</span>
-                <div className="flex items-center gap-1 rounded-lg border border-white/15 bg-white/10 p-1" aria-label="Language">
+                <div className="flex items-center gap-1 rounded-lg border border-white/15 bg-white/10 p-1" aria-label={tr("Language")}>
                   <button type="button" onClick={() => setLanguage("uk")} aria-pressed={language === "uk"} className={`rounded-md px-2 py-1 text-[10px] font-bold ${language === "uk" ? "bg-white text-slate-900" : "text-white/80 hover:bg-white/10"}`}>UA</button>
                   <button type="button" onClick={() => setLanguage("en")} aria-pressed={language === "en"} className={`rounded-md px-2 py-1 text-[10px] font-bold ${language === "en" ? "bg-white text-slate-900" : "text-white/80 hover:bg-white/10"}`}>EN</button>
                 </div>
@@ -308,13 +314,13 @@ function Dashboard() {
             <span className="text-muted-foreground">{tr("Територія")}</span>
             <select value={territory ?? ""} onChange={(e) => setTerritory(e.target.value || null)} className="rounded-md border bg-background px-2 py-1.5">
               <option value="">{tr("Уся область")}</option>
-              {terr.map((r) => <option key={r.administrative_territory!}>{r.administrative_territory}</option>)}
+              {terr.map((r) => <option key={r.administrative_territory!}>{tr(r.administrative_territory ?? "")}</option>)}
             </select>
           </label>
           <div className="ml-auto flex items-center gap-2">
             {territory && (
               <span className="inline-flex items-center gap-1 rounded-full bg-accent px-3 py-1 text-xs text-accent-foreground">
-                {territory}
+                {tr(territory)}
                 <button onClick={() => setTerritory(null)} aria-label={tr("Прибрати фільтр")}><X className="h-3 w-3" /></button>
               </span>
             )}
@@ -331,7 +337,7 @@ function Dashboard() {
       <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-6">
         {data.error && (
           <div className="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
-            <AlertTriangle className="h-4 w-4" /> {data.error}
+            <AlertTriangle className="h-4 w-4" /> {tr(data.error)}
           </div>
         )}
 
@@ -546,7 +552,7 @@ function DistrictMap({ rows, selected, onSelect }: { rows: Row[]; selected: stri
                 const row = group ? findRow(group.aliases) : undefined;
                 const level = mapLevel(row);
                 const fill = mapFill(row);
-                return <path key={i} d={ringsToPath(f.geometry?.coordinates)} fill={fill} fillOpacity={selected && group && !group.aliases.some((a) => selected.toLocaleLowerCase("uk-UA").includes(a)) ? 0.35 : 0.88} stroke="var(--border)" strokeWidth="1.8" vectorEffect="non-scaling-stroke" className="cursor-pointer transition-opacity hover:opacity-90" onClick={() => group && row && onSelect(selected === row.administrative_territory ? null : row.administrative_territory ?? null)}><title>{group?.label ?? featureLabel(f) ?? "Район"} · {row ? fmt(num(row.cases_total)) + " випадків; " + fmt(num(row.incidence_per_100k), 1) + " на 100 тис." : "немає відповідного рядка даних"}</title></path>;
+                return <path key={i} d={ringsToPath(f.geometry?.coordinates)} fill={fill} fillOpacity={selected && group && !group.aliases.some((a) => selected.toLocaleLowerCase("uk-UA").includes(a)) ? 0.35 : 0.88} stroke="var(--border)" strokeWidth="1.8" vectorEffect="non-scaling-stroke" className="cursor-pointer transition-opacity hover:opacity-90" onClick={() => group && row && onSelect(selected === row.administrative_territory ? null : row.administrative_territory ?? null)}><title>{tr(group?.label ?? featureLabel(f) ?? "Район")} · {row ? fmt(num(row.cases_total)) + " " + tr("випадків") + "; " + fmt(num(row.incidence_per_100k), 1) + " " + tr("на 100 тис.") : tr("немає відповідного рядка даних")}</title></path>;
               })}
               <line x1={cityPoint[0] - 7} y1={cityPoint[1]} x2={cityPoint[0] + 7} y2={cityPoint[1]} stroke="var(--foreground)" strokeWidth="2.5" />
               <line x1={cityPoint[0]} y1={cityPoint[1] - 7} x2={cityPoint[0]} y2={cityPoint[1] + 7} stroke="var(--foreground)" strokeWidth="2.5" />
@@ -559,7 +565,7 @@ function DistrictMap({ rows, selected, onSelect }: { rows: Row[]; selected: stri
               const row = findRow(group.aliases);
               const active = !!row && selected === row.administrative_territory;
               return <button key={group.key} onClick={() => row && onSelect(active ? null : row.administrative_territory ?? null)} className={`w-full rounded-lg border p-3 text-left transition-colors hover:bg-muted/60 ${active ? "border-primary bg-accent" : "bg-card"}`}>
-                <div className="flex items-center gap-2 text-sm font-semibold"><span className="h-3 w-3 shrink-0 rounded-sm" style={{ background: mapFill(row) }} />{group.label}</div>
+                <div className="flex items-center gap-2 text-sm font-semibold"><span className="h-3 w-3 shrink-0 rounded-sm" style={{ background: mapFill(row) }} />{tr(group.label)}</div>
                 <div className="mt-2 grid grid-cols-2 gap-2 text-xs"><span className="text-muted-foreground">{tr("Випадки")}</span><strong className="text-right">{fmt(num(row?.cases_total))}</strong><span className="text-muted-foreground">{tr("На 100 тис.")}</span><strong className="text-right">{fmt(num(row?.incidence_per_100k), 1)}</strong><span className="text-muted-foreground">{tr("Рівень")}</span><span className="text-right">{row ? tr(levelLabel[intensityLevel(row)]) : tr("Немає даних")}</span></div>
               </button>;
             })}
@@ -608,7 +614,7 @@ function TopEpidemiologyStatus({ current }: { current?: Row }) {
         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{tr("Епідемічний поріг")}</div>
         <div className="mt-2 flex items-center gap-3">
           <span className={`h-3 w-3 shrink-0 rounded-full ${!thresholdKnown ? "bg-muted-foreground" : exceeded ? "bg-red-600" : "bg-emerald-600"}`} />
-          <h2 className="text-xl font-bold">{thresholdText}</h2>
+          <h2 className="text-xl font-bold">{tr(thresholdText)}</h2>
         </div>
         <p className="mt-2 text-sm">{tr("Обласна захворюваність:")} <strong>{fmt(incidence, 1)}</strong> {tr("на 100 тис. населення")}</p>
         <p className="text-sm">{tr("Поріг низької інтенсивності:")} <strong>{fmt(threshold, 1)}</strong> {tr("на 100 тис.")}</p>
@@ -617,7 +623,7 @@ function TopEpidemiologyStatus({ current }: { current?: Row }) {
         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{tr("Рівень інтенсивності епідемічного процесу")}</div>
         <div className="mt-2 flex items-center gap-3">
           <span className={`h-3 w-3 shrink-0 rounded-full ${LEVEL_COLOR[level]}`} />
-          <h2 className="text-xl font-bold">{levelText[level]}</h2>
+          <h2 className="text-xl font-bold">{tr(levelText[level])}</h2>
         </div>
         <p className="mt-2 text-sm">{tr("Показник захворюваності:")} <strong>{fmt(incidence, 1)}</strong> {tr("на 100 тис. населення")}</p>
         <p className="text-sm">{tr("Оцінка визначається за порогами, що надійшли з джерела даних.")}</p>
@@ -816,7 +822,7 @@ function Kpis({ focus, prev, prevWeek, label }: { focus?: Row; prev?: Row; prevW
           <div className="mt-2 font-display text-3xl font-bold text-primary md:text-4xl">{fmt(num(focus?.[k]), d)}</div>
           <div className="mt-1 text-xs text-muted-foreground">
             {label}
-            {prevWeek && prev && <> · тиж. {prevWeek.split("-")[1]}: {fmt(num(prev[k]), d)}</>}
+            {prevWeek && prev && <> · {tr("тиж.")} {prevWeek.split("-")[1]}: {fmt(num(prev[k]), d)}</>}
           </div>
         </div>
       ))}
@@ -868,8 +874,8 @@ function TerritoryTable({ rows, selected, onSelect }: { rows: Row[]; selected: s
               <tr key={r.administrative_territory!}
                 onClick={() => !isTotal && onSelect(selected === r.administrative_territory ? null : r.administrative_territory)}
                 className={`border-b last:border-0 ${isTotal ? "bg-muted font-semibold" : "cursor-pointer hover:bg-muted/60"} ${selected === r.administrative_territory ? "bg-accent" : ""}`}>
-                <td className="py-2">{r.administrative_territory}</td>
-                <td className="text-muted-foreground">{RECORD_TYPE_LABEL[r.record_type ?? ""] ?? r.record_type}</td>
+                <td className="py-2">{tr(r.administrative_territory ?? "")}</td>
+                <td className="text-muted-foreground">{tr(RECORD_TYPE_LABEL[r.record_type ?? ""] ?? r.record_type ?? "")}</td>
                 <td className="text-right">{fmt(num(r.cases_total))}</td>
                 <td className="text-right">{fmt(num(r.cases_children_under_18))}</td>
                 <td className="text-right">{fmt(num(r.hospitalized_total))}</td>
@@ -993,7 +999,7 @@ function CasesTrend({ rows, weeks, territory }: { rows: Row[]; weeks: string[]; 
     const wr = rows.filter((r) => weekKey(r) === w);
     const r = territory ? wr.find((x) => x.administrative_territory === territory) : totalRow(wr);
     return {
-      name: `тиж. ${w.split("-")[1]} / ${w.split("-")[0]}`,
+      name: `${tr("тиж.")} ${w.split("-")[1]} / ${w.split("-")[0]}`,
       [tr("Усього випадків")]: num(r?.cases_total),
       [tr("Діти до 18 років")]: num(r?.cases_children_under_18),
       [tr("Школярі")]: num(r?.cases_schoolchildren),
@@ -1033,11 +1039,11 @@ function Vaccination({ rows, week }: { rows: Row[]; week: string }) {
         </div>
         <div className="flex flex-wrap gap-2 text-sm">
           <select value={brand} onChange={(e) => setBrand(e.target.value)} className="rounded-md border bg-background px-2 py-1.5">
-            {brands.map((b) => <option key={b} value={b}>{b === "ВСЬОГО" ? tr("Усі вакцини") : b}</option>)}
+            {brands.map((b) => <option key={b} value={b}>{b === "ВСЬОГО" ? tr("Усі вакцини") : tr(b)}</option>)}
           </select>
           <select value={terr} onChange={(e) => setTerr(e.target.value)} className="rounded-md border bg-background px-2 py-1.5">
             <option value="ВСЬОГО">{tr("Уся область")}</option>
-            {terrs.map((t) => <option key={t}>{t}</option>)}
+            {terrs.map((t) => <option key={t}>{tr(t)}</option>)}
           </select>
         </div>
       </div>
@@ -1157,7 +1163,7 @@ function QualityNotes() {
     <section className="rounded-xl border bg-muted/50 p-5">
       <h2 className="section-title">{tr("Методологічні обмеження")}</h2>
       <ul className="mt-3 grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
-        {notes.map((n) => <li key={n} className="flex gap-2"><span className="text-teal">•</span>{n}</li>)}
+        {notes.map((n) => <li key={n} className="flex gap-2"><span className="text-teal">•</span>{tr(n)}</li>)}
       </ul>
     </section>
   );
