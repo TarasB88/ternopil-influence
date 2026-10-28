@@ -8,7 +8,7 @@ export function num(v: string | null | undefined): number | null {
 }
 
 export const fmt = (v: number | null, digits = 0) =>
-  v === null ? "немає даних" : v.toLocaleString("uk-UA", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  v === null ? ((typeof document !== "undefined" && document.documentElement.lang === "en") ? "no data" : "немає даних") : v.toLocaleString(typeof document !== "undefined" && document.documentElement.lang === "en" ? "en-GB" : "uk-UA", { minimumFractionDigits: digits, maximumFractionDigits: digits });
 
 export const weekKey = (r: Row) => `${r.year}-${String(r.week).padStart(2, "0")}`;
 
