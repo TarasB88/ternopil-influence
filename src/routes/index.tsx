@@ -168,7 +168,13 @@ const EN: Record<string, string> = {
   "На 100 тис. населення": "Per 100,000 population",
   "Записів": "records",
   "записів": "records",
-  "{tr("{tr("Усі значення за тиждень — нулі. Потрібно підтвердити, що це фактичні нулі, а не незаповнений шаблон.")}")}": "All values for this week are zero. Confirm these are actual zeros and not an unfilled template.",
+  "Усі значення за тиждень — нулі. Потрібно підтвердити, що це фактичні нулі, а не незаповнений шаблон.": "All values for this week are zero. Confirm these are actual zeros and not an unfilled template.",
+  "Рядок «ВСЬОГО» не додається до сум територій.": "The “TOTAL” row is not added to territory sums.",
+  "Порожні значення не замінюються нулями.": "Blank values are not replaced with zeros.",
+  "Пороги інтенсивності — лише там, де вони є в джерелі.": "Intensity thresholds are shown only where provided by the source.",
+  "Немає карти громад: дані агреговані на рівні районів і міста.": "No hromada map is available: data are aggregated by district and city.",
+  "Охоплення вакцинацією у % не показується без узгодженого знаменника.": "Vaccination coverage (%) is not shown without a validated denominator.",
+  "Нульові дані вакцинації потребують перевірки перед публікацією.": "Zero vaccination values must be verified before publication.",
   "За територіями": "By territory",
   "усі вакцини": "all vaccines",
   "Карта епідемічної ситуації за районами та м. Тернопіль": "Epidemic situation map by district and Ternopil city",
@@ -1049,7 +1055,7 @@ function Vaccination({ rows, week }: { rows: Row[]; week: string }) {
           {allZero && (
             <div className="mt-4 flex gap-2 rounded-lg bg-warning-soft p-3 text-sm text-warning">
               <AlertTriangle className="h-4 w-4 shrink-0" />
-              Усі значення за тиждень — нулі. Потрібно підтвердити, що це фактичні нулі, а не незаповнений шаблон.
+              {tr("Усі значення за тиждень — нулі. Потрібно підтвердити, що це фактичні нулі, а не незаповнений шаблон.")}
             </div>
           )}
           <div className="mt-4 grid gap-6 lg:grid-cols-3">
