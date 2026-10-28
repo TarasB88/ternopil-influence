@@ -239,6 +239,10 @@ const tr = (text: string) => {
   "5–9": "5–9 years",
   "10–14": "10–14 years",
   "15–17": "15–17 years",
+  "Епідситуація": "Epidemiological situation",
+  "Грип": "Influenza",
+  "ГРВІ": "Acute respiratory infections (ARI)",
+  "COVID-19 у Тернопільській області": "COVID-19 in Ternopil Oblast",
 };
 
 const dataQuery = queryOptions({
