@@ -129,7 +129,68 @@ const EN: Record<string, string> = {
   "Високий поріг": "High threshold",
   "Щеплено": "Vaccinated",
   "Низький поріг": "Low threshold",
-  "Дорослі = всього − діти до 18": "Adults = total − children under 18"
+  "Дорослі = всього − діти до 18": "Adults = total − children under 18",
+  "Грип, ГРВІ, COVID-19 та вакцинація — Тернопільська область": "Influenza, ARI, COVID-19 and vaccination — Ternopil Oblast",
+  "Щотижневий епідемічний дашборд: захворюваність, госпіталізації, інтенсивність і щеплення проти грипу.": "Weekly epidemiological dashboard: illness, hospitalizations, intensity and influenza vaccination.",
+  "Епідмоніторинг Тернопільщини": "Epidemiological monitoring in Ternopil Oblast",
+  "Щотижневі дані про грип, ГРВІ, COVID-19 та вакцинацію.": "Weekly data on influenza, ARI, COVID-19 and vaccination.",
+  "Доступно тижнів": "Weeks available",
+  "Джерело": "Source",
+  "Оновлено": "Updated",
+  "Епідемічні пороги показані окремими лініями": "Epidemic thresholds are shown as separate lines",
+  "Кількість випадків без ліній епідемічних порогів": "Case counts without epidemic threshold lines",
+  "немає даних": "no data",
+  "Нижче епідпорогу": "Below epidemic threshold",
+  "Немає даних про пороги": "Threshold data unavailable",
+  "Немає даних для оцінки": "Insufficient data for assessment",
+  "Епідпоріг перевищено": "Epidemic threshold exceeded",
+  "Епідпоріг не перевищено": "Epidemic threshold not exceeded",
+  "Фоновий": "Baseline",
+  "Пороги відсутні в джерелі": "Thresholds unavailable in source",
+  "Низький епідпоріг": "Low epidemic threshold",
+  "Середній епідпоріг": "Medium epidemic threshold",
+  "Високий епідпоріг": "High epidemic threshold",
+  "випадків": "cases",
+  "випадок": "case",
+  "випадки": "cases",
+  "нижче": "below",
+  "вище": "above",
+  "зросла": "increased",
+  "зменшилась": "decreased",
+  "не змінилась": "did not change",
+  "немає даних для порівняння": "no comparison data",
+  "Порівняння з епідемічним порогом: немає даних": "Epidemic threshold comparison: no data",
+  "Досягнуто порогу високої інтенсивності": "High-intensity threshold reached",
+  "Досягнуто порогу середньої інтенсивності": "Medium-intensity threshold reached",
+  "Досягнуто порогу низької інтенсивності": "Low-intensity threshold reached",
+  "Території": "Territories",
+  "Випадки всього": "Total cases",
+  "Госпіталізовано": "Hospitalized",
+  "На 100 тис. населення": "Per 100,000 population",
+  "Записів": "records",
+  "записів": "records",
+  "{tr("Усі значення за тиждень — нулі. Потрібно підтвердити, що це фактичні нулі, а не незаповнений шаблон.")}": "All values for this week are zero. Confirm these are actual zeros and not an unfilled template.",
+  "За територіями": "By territory",
+  "усі вакцини": "all vaccines",
+  "Карта епідемічної ситуації за районами та м. Тернопіль": "Epidemic situation map by district and Ternopil city",
+  "Колір показує захворюваність на 100 тис. населення; натисніть район для фільтрації.": "Colour indicates incidence per 100,000 population; click a district to filter.",
+  "Карта Кременецького, Тернопільського, Чортківського районів і міста Тернополя": "Map of Kremenets, Ternopil and Chortkiv districts and Ternopil city",
+  "Район": "District",
+  "немає відповідного рядка даних": "no matching data row",
+  "Немає окремого рядка": "No separate record",
+  "Епідситуація із захворюваності на грип, ГРВІ та COVID-19 у Тернопільській області": "Epidemiological situation: influenza, ARI and COVID-19 in Ternopil Oblast",
+  "Пороги відсутні в джерелі": "Thresholds unavailable in source",
+  "Немає даних для порівняння": "No comparison data",
+  "Дорослі = всього − діти до 18": "Adults = total − children under 18",
+  "до 1 року": "Under 1 year",
+  "Хронічні захворювання": "Chronic conditions",
+  "Віком 65+": "Age 65+",
+  "Заклади довгострокового догляду": "Long-term care facilities",
+  "Діти 6 міс – 5 років": "Children aged 6 months–5 years",
+  "Медичні працівники": "Healthcare workers",
+  "Вагітні": "Pregnant people",
+  "Інші групи ризику": "Other risk groups"
+
 };
 const tr = (text: string) => uiLanguage === "en" ? (EN[text] ?? text) : text;
 
@@ -142,10 +203,10 @@ const dataQuery = queryOptions({
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Грип, ГРВІ, COVID-19 та вакцинація — Тернопільська область" },
-      { name: "description", content: "Щотижневий епідемічний дашборд: захворюваність, госпіталізації, інтенсивність і щеплення проти грипу." },
-      { property: "og:title", content: "Епідмоніторинг Тернопільщини" },
-      { property: "og:description", content: "Щотижневі дані про грип, ГРВІ, COVID-19 та вакцинацію." },
+      { title: tr("Грип, ГРВІ, COVID-19 та вакцинація — Тернопільська область") },
+      { name: "description", content: tr("Щотижневий епідемічний дашборд: захворюваність, госпіталізації, інтенсивність і щеплення проти грипу.") },
+      { property: "og:title", content: tr("Епідмоніторинг Тернопільщини") },
+      { property: "og:description", content: tr("Щотижневі дані про грип, ГРВІ, COVID-19 та вакцинацію.") },
     ],
   }),
   loader: ({ context }) => context.queryClient.ensureQueryData(dataQuery),
@@ -242,7 +303,7 @@ function Dashboard() {
           <label className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">{tr("Тиждень")}</span>
             <select value={week} onChange={(e) => setWeek(e.target.value)} className="rounded-md border bg-background px-2 py-1.5">
-              {weeks.map((w) => <option key={w} value={w}>{w.replace("-", " / тиж. ")}</option>)}
+              {weeks.map((w) => <option key={w} value={w}>{language === "en" ? w.replace("-", " / wk ") : w.replace("-", " / тиж. ")}</option>)}
             </select>
           </label>
           <label className="flex items-center gap-2 text-sm">
@@ -281,7 +342,7 @@ function Dashboard() {
         <RespiratorySituation week={week} sample={sample} current={total} previous={totalRow(prevRows)} fetchedAt={data.fetchedAt} />
 
 
-        <Kpis focus={focus} prev={prevFocus} prevWeek={prevWeek} label={territory ?? "Уся область"} />
+        <Kpis focus={focus} prev={prevFocus} prevWeek={prevWeek} label={territory ? tr(territory) : tr("Уся область")} />
 
         <div className="grid gap-6 lg:grid-cols-5">
           <Card className="lg:col-span-3" title={tr("Випадки за територіями")} sub={tr("Клікніть стовпчик, щоб відфільтрувати. Підсумок не входить до ранжування.")}>
@@ -299,7 +360,7 @@ function Dashboard() {
               </BarChart>
             </ResponsiveContainer>
           </Card>
-          <Card className="lg:col-span-2" title={tr("Діти та дорослі")} sub={`${territory ?? "Уся область"} · дорослі = всього − діти до 18`}>
+          <Card className="lg:col-span-2" title={tr("Діти та дорослі")} sub={`${territory ? tr(territory) : tr("Уся область")} · ${tr("Дорослі = всього − діти до 18")}`}>
             <ChildAdult r={focus} />
           </Card>
         </div>
@@ -319,10 +380,10 @@ function Dashboard() {
 
         {weeks.length >= 2 && (
           <div className="grid gap-6 lg:grid-cols-2">
-            <Card title={tr("Динаміка захворюваності на 100 тис. населення")} sub={`Епідемічні пороги показані окремими лініями · ${territory ?? "Уся область"} · доступно тижнів: ${weeks.length}`}>
+            <Card title={tr("Динаміка захворюваності на 100 тис. населення")} sub={`${tr("Епідемічні пороги показані окремими лініями")} · ${territory ? tr(territory) : tr("Уся область")} · ${tr("Доступно тижнів")}: ${weeks.length}`}>
               <IncidenceTrend rows={data.respiratory} weeks={weeks} territory={territory} />
             </Card>
-            <Card title={tr("Динаміка абсолютної кількості випадків")} sub={`Кількість випадків без ліній епідемічних порогів · ${territory ?? "Уся область"} · доступно тижнів: ${weeks.length}`}>
+            <Card title={tr("Динаміка абсолютної кількості випадків")} sub={`${tr("Кількість випадків без ліній епідемічних порогів")} · ${territory ? tr(territory) : tr("Уся область")} · ${tr("Доступно тижнів")}: ${weeks.length}`}>
               <CasesTrend rows={data.respiratory} weeks={weeks} territory={territory} />
             </Card>
           </div>
@@ -331,7 +392,7 @@ function Dashboard() {
         <Vaccination rows={data.vaccination} week={week} />
 
         <footer className="pb-6 text-center text-xs text-muted-foreground">
-          <p>Джерело: Google Sheets (weekly_respiratory, weekly_vaccination) · оновлено {new Date(data.fetchedAt).toLocaleString("uk-UA")}</p>
+          <p>{tr("Джерело")}: Google Sheets (weekly_respiratory, weekly_vaccination) · {tr("Оновлено")} {new Date(data.fetchedAt).toLocaleString(language === "en" ? "en-GB" : "uk-UA")}</p>
           <p className="mt-2">{tr("Розробник:")} <a href="https://www.linkedin.com/in/taras-burda-410401318/" target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline-offset-4 hover:underline">Taras Burda</a></p>
         </footer>
       </main>
@@ -473,7 +534,7 @@ function DistrictMap({ rows, selected, onSelect }: { rows: Row[]; selected: stri
   };
 
   return (
-    <Card title="Карта епідемічної ситуації за районами та м. Тернопіль" sub="Колір показує захворюваність на 100 тис. населення; натисніть район для фільтрації.">
+    <Card title={tr("Карта епідемічної ситуації за районами та м. Тернопіль")} sub={tr("Колір показує захворюваність на 100 тис. населення; натисніть район для фільтрації.")}>
       {geoError ? (
         <p className="text-sm text-muted-foreground">{tr("Не вдалося завантажити географічні межі. Перевірте підключення до джерела GeoJSON.")}</p>
       ) : features.length === 0 ? (
@@ -481,7 +542,7 @@ function DistrictMap({ rows, selected, onSelect }: { rows: Row[]; selected: stri
       ) : (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(220px,1fr)]">
           <div className="min-w-0 overflow-hidden rounded-lg border bg-muted/20">
-            <svg viewBox="0 0 900 560" role="img" aria-label="Карта Кременецького, Тернопільського, Чортківського районів і міста Тернополя" className="mx-auto h-auto max-h-[340px] w-full max-w-[560px]">
+            <svg viewBox="0 0 900 560" role="img" aria-label={tr("Карта Кременецького, Тернопільського, Чортківського районів і міста Тернополя")} className="mx-auto h-auto max-h-[340px] w-full max-w-[560px]">
               {features.map((f, i) => {
                 const group = getFeatureGroup(f);
                 const row = group ? findRow(group.aliases) : undefined;
@@ -501,12 +562,12 @@ function DistrictMap({ rows, selected, onSelect }: { rows: Row[]; selected: stri
               const active = !!row && selected === row.administrative_territory;
               return <button key={group.key} onClick={() => row && onSelect(active ? null : row.administrative_territory ?? null)} className={`w-full rounded-lg border p-3 text-left transition-colors hover:bg-muted/60 ${active ? "border-primary bg-accent" : "bg-card"}`}>
                 <div className="flex items-center gap-2 text-sm font-semibold"><span className="h-3 w-3 shrink-0 rounded-sm" style={{ background: mapFill(row) }} />{group.label}</div>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-xs"><span className="text-muted-foreground">{tr("Випадки")}</span><strong className="text-right">{fmt(num(row?.cases_total))}</strong><span className="text-muted-foreground">{tr("На 100 тис.")}</span><strong className="text-right">{fmt(num(row?.incidence_per_100k), 1)}</strong><span className="text-muted-foreground">{tr("Рівень")}</span><span className="text-right">{row ? levelLabel[intensityLevel(row)] : "Немає даних"}</span></div>
+                <div className="mt-2 grid grid-cols-2 gap-2 text-xs"><span className="text-muted-foreground">{tr("Випадки")}</span><strong className="text-right">{fmt(num(row?.cases_total))}</strong><span className="text-muted-foreground">{tr("На 100 тис.")}</span><strong className="text-right">{fmt(num(row?.incidence_per_100k), 1)}</strong><span className="text-muted-foreground">{tr("Рівень")}</span><span className="text-right">{row ? tr(levelLabel[intensityLevel(row)]) : tr("Немає даних")}</span></div>
               </button>;
             })}
             <button onClick={() => cityRow && onSelect(citySelected ? null : cityRow.administrative_territory ?? null)} className={`w-full rounded-lg border p-3 text-left transition-colors hover:bg-muted/60 ${citySelected ? "border-primary bg-accent" : "bg-card"}`}>
               <div className="flex items-center gap-2 text-sm font-semibold"><span className="h-3 w-3 shrink-0 rounded-full" style={{ background: mapFill(cityRow) }} />{tr("м. Тернопіль")}</div>
-              <div className="mt-2 grid grid-cols-2 gap-2 text-xs"><span className="text-muted-foreground">{tr("Випадки")}</span><strong className="text-right">{fmt(num(cityRow?.cases_total))}</strong><span className="text-muted-foreground">{tr("На 100 тис.")}</span><strong className="text-right">{fmt(num(cityRow?.incidence_per_100k), 1)}</strong><span className="text-muted-foreground">{tr("Рівень")}</span><span className="text-right">{cityRow ? levelLabel[intensityLevel(cityRow)] : "Немає окремого рядка"}</span></div>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-xs"><span className="text-muted-foreground">{tr("Випадки")}</span><strong className="text-right">{fmt(num(cityRow?.cases_total))}</strong><span className="text-muted-foreground">{tr("На 100 тис.")}</span><strong className="text-right">{fmt(num(cityRow?.incidence_per_100k), 1)}</strong><span className="text-muted-foreground">{tr("Рівень")}</span><span className="text-right">{cityRow ? tr(levelLabel[intensityLevel(cityRow)]) : tr("Немає окремого рядка")}</span></div>
             </button>
             <div className="rounded-md border p-3"><p className="mb-2 text-xs font-semibold">{tr("Захворюваність на 100 тис. населення")}</p><div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs"><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#d9f0e3"}} />{tr("0 / нижче порогу")}</span><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#91cfb0"}} />{tr("Низька")}</span><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#f6c85f"}} />{tr("Середня")}</span><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#d95f59"}} />{tr("Висока")}</span><span className="col-span-2 flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#d1d5db"}} />{tr("Немає значення показника")}</span></div><p className="mt-2 text-[11px] text-muted-foreground">{tr("Якщо в таблиці є офіційні пороги інтенсивності, використовуються вони; інакше застосовано технічну шкалу: &lt;500, 500–999, ≥1000 на 100 тис.")}</p></div>
             <p className="text-xs text-muted-foreground">{tr("Геодані:")} <a className="underline" href="https://github.com/slawomirmatuszak/ukrainian_geodata" target="_blank" rel="noreferrer">Ukrainian geodata (CC BY 4.0)</a>{tr(". Маркер міста — координати центру Тернополя; це не адміністративний контур міста.")}</p>
@@ -784,7 +845,7 @@ function ChildAdult({ r }: { r?: Row }) {
           <div key={x.name}>
             <div className="flex items-center gap-2 text-sm"><span className="h-3 w-3 rounded-sm" style={{ background: CH[i] }} />{x.name}</div>
             <div className="font-display text-2xl font-semibold">{((x.value / all) * 100).toLocaleString("uk-UA", { maximumFractionDigits: 1 })}%</div>
-            <div className="text-xs text-muted-foreground">{fmt(x.value)} випадків</div>
+            <div className="text-xs text-muted-foreground">{fmt(x.value)} {tr("випадків")}</div>
           </div>
         ))}
       </div>
@@ -974,7 +1035,7 @@ function Vaccination({ rows, week }: { rows: Row[]; week: string }) {
         </div>
         <div className="flex flex-wrap gap-2 text-sm">
           <select value={brand} onChange={(e) => setBrand(e.target.value)} className="rounded-md border bg-background px-2 py-1.5">
-            {brands.map((b) => <option key={b} value={b}>{b === "ВСЬОГО" ? "Усі вакцини" : b}</option>)}
+            {brands.map((b) => <option key={b} value={b}>{b === "ВСЬОГО" ? tr("Усі вакцини") : b}</option>)}
           </select>
           <select value={terr} onChange={(e) => setTerr(e.target.value)} className="rounded-md border bg-background px-2 py-1.5">
             <option value="ВСЬОГО">{tr("Уся область")}</option>
@@ -1004,11 +1065,11 @@ function Vaccination({ rows, week }: { rows: Row[]; week: string }) {
               <div className="space-y-1.5">
                 {RISK_GROUPS.map(([k, n]) => (
                   <div key={k} className="flex justify-between border-b py-1 text-sm last:border-0">
-                    <span>{n}</span><span className="font-medium">{fmt(num(row?.[k]))}</span>
+                    <span>{tr(n)}</span><span className="font-medium">{fmt(num(row?.[k]))}</span>
                   </div>
                 ))}
               </div>
-              <div className="mt-4 mb-2 text-xs font-medium uppercase text-muted-foreground">За територіями ({brand === "ВСЬОГО" ? "усі вакцини" : brand})</div>
+              <div className="mt-4 mb-2 text-xs font-medium uppercase text-muted-foreground">{tr("За територіями")} ({brand === "ВСЬОГО" ? tr("усі вакцини") : brand})</div>
               <ResponsiveContainer width="100%" height={160}>
                 <BarChart data={byTerr.map((r) => ({ name: r.administrative_territory, Щеплено: num(r.vaccinated_this_week) }))}>
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
@@ -1056,7 +1117,7 @@ function DataTable({ rows }: { rows: Row[] }) {
           <option value="">{tr("Усі типи записів")}</option>
           <option value="district">{tr("Район")}</option><option value="city">{tr("Місто")}</option><option value="total">{tr("Підсумок")}</option>
         </select>
-        <span className="text-xs text-muted-foreground">{filtered.length} записів</span>
+        <span className="text-xs text-muted-foreground">{filtered.length} {tr("записів")}</span>
         <div className="ml-auto flex gap-2">
           <button onClick={() => exportFile("csv")} className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm hover:bg-muted"><Download className="h-4 w-4" />CSV</button>
           <button onClick={() => exportFile("xlsx")} className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm hover:bg-muted"><Download className="h-4 w-4" />XLSX</button>
