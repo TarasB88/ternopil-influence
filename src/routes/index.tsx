@@ -213,13 +213,6 @@ const EN: Record<string, string> = {
   "medical_risk_total": "Medical risk — total",
   "epidemic_risk_total": "Epidemic risk — total",
   "Language": "Language",
-const tr = (text: string) => {
-  if (uiLanguage !== "en") return text;
-  if (EN[text]) return EN[text];
-  if (text.endsWith(" район")) return text.slice(0, -" район".length) + " District";
-  if (text.endsWith(" територіальна громада")) return text.slice(0, -" територіальна громада".length) + " Territorial Hromada";
-  if (/^[a-z][a-z0-9_]*$/.test(text)) return text.split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
-  return text;
   "Кременецький район": "Kremenets District",
   "Тернопільський район": "Ternopil District",
   "Чортківський район": "Chortkiv District",
@@ -243,7 +236,15 @@ const tr = (text: string) => {
   "Грип": "Influenza",
   "ГРВІ": "Acute respiratory infections (ARI)",
   "COVID-19 у Тернопільській області": "COVID-19 in Ternopil Oblast",
+};
 
+const tr = (text: string) => {
+  if (uiLanguage !== "en") return text;
+  if (EN[text]) return EN[text];
+  if (text.endsWith(" район")) return text.slice(0, -" район".length) + " District";
+  if (text.endsWith(" територіальна громада")) return text.slice(0, -" територіальна громада".length) + " Territorial Hromada";
+  if (/^[a-z][a-z0-9_]*$/.test(text)) return text.split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
+  return text;
 };
 
 const dataQuery = queryOptions({
