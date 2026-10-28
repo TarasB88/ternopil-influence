@@ -237,8 +237,10 @@ const EN: Record<string, string> = {
   "COVID-19 у Тернопільській області": "COVID-19 in Ternopil Oblast",
 };
 
+const UK = Object.fromEntries(Object.entries(EN).map(([uk, en]) => [en, uk])) as Record<string, string>;
+
 const tr = (text: string) => {
-  if (typeof document === "undefined" || document.documentElement.lang !== "en") return text;
+  if (typeof document === "undefined" || document.documentElement.lang !== "en") return UK[text] ?? text;
   if (EN[text]) return EN[text];
   if (text.endsWith(" район")) return text.slice(0, -" район".length) + " District";
   if (text.endsWith(" територіальна громада")) return text.slice(0, -" територіальна громада".length) + " Territorial Hromada";
