@@ -220,6 +220,25 @@ const tr = (text: string) => {
   if (text.endsWith(" територіальна громада")) return text.slice(0, -" територіальна громада".length) + " Territorial Hromada";
   if (/^[a-z][a-z0-9_]*$/.test(text)) return text.split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
   return text;
+  "Кременецький район": "Kremenets District",
+  "Тернопільський район": "Ternopil District",
+  "Чортківський район": "Chortkiv District",
+  "кременецький район": "Kremenets District",
+  "тернопільський район": "Ternopil District",
+  "чортківський район": "Chortkiv District",
+  "Кременецький": "Kremenets",
+  "Тернопільський": "Ternopil",
+  "Чортківський": "Chortkiv",
+  "Кременецького": "Kremenets",
+  "Тернопільського": "Ternopil",
+  "Чортківського": "Chortkiv",
+  "міста Тернополя": "Ternopil city",
+  "«ВСЬОГО»": "“TOTAL”",
+  "ВСЬОГО": "TOTAL",
+  "1–4": "1–4 years",
+  "5–9": "5–9 years",
+  "10–14": "10–14 years",
+  "15–17": "15–17 years",
 };
 
 const dataQuery = queryOptions({
