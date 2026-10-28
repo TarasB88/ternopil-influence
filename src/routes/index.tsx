@@ -278,13 +278,23 @@ function Dashboard() {
   const weeks = useMemo(() => listWeeks(data.respiratory), [data.respiratory]);
   const [week, setWeek] = useState(weeks[weeks.length - 1] ?? "");
   const [territory, setTerritory] = useState<string | null>(null);
-  const [language, setLanguage] = useState<UiLanguage>(() => {
-    try { return typeof window !== "undefined" && window.localStorage.getItem("dashboard-language") === "en" ? "en" : "uk"; } catch { return "uk"; }
-  });
+  const [language, setLanguage] = useState<UiLanguage>("uk");
+  const [languageReady, setLanguageReady] = useState(false);
+  // Render Ukrainian first (including SSR/hydration), then restore a saved preference.
   useEffect(() => {
+    let savedLanguage: UiLanguage = "uk";
+    try {
+      savedLanguage = window.localStorage.getItem("dashboard-language") === "en" ? "en" : "uk";
+    } catch {}
+    document.documentElement.lang = savedLanguage;
+    setLanguage(savedLanguage);
+    setLanguageReady(true);
+  }, []);
+  useEffect(() => {
+    if (!languageReady) return;
     document.documentElement.lang = language;
     try { window.localStorage.setItem("dashboard-language", language); } catch {}
-  }, [language]);
+  }, [language, languageReady]);
   const weekRows = data.respiratory.filter((r) => weekKey(r) === week);
   const terr = territorial(weekRows);
   const total = totalRow(weekRows);
