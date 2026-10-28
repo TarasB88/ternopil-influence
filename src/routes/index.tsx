@@ -96,12 +96,12 @@ const EN: Record<string, string> = {
   "Підсумок": "Total",
   "«—» — відсутнє значення в джерелі (не нуль). Сірі рядки — підсумкові записи.": "“—” means the source value is missing (not zero). Grey rows are totals.",
   "Методологічні обмеження": "Methodological limitations",
-  "Рядок «ВСЬОГО» не додається до сум територій.": "The “TOTAL” row is not added to territory sums.",
-  "Порожні значення не замінюються нулями.": "Blank values are not replaced with zeros.",
-  "Пороги інтенсивності — лише там, де вони є в джерелі.": "Intensity thresholds are shown only where provided by the source.",
-  "Немає карти громад: дані агреговані на рівні районів і міста.": "No hromada map: data are aggregated at district and city level.",
-  "Охоплення вакцинацією у % не показується без узгодженого знаменника.": "Vaccination coverage (%) is not shown without a validated denominator.",
-  "Нульові дані вакцинації потребують перевірки перед публікацією.": "Zero vaccination values must be verified before publication.",
+  tr("Рядок «ВСЬОГО» не додається до сум територій."): "The “TOTAL” row is not added to territory sums.",
+  tr("Порожні значення не замінюються нулями."): "Blank values are not replaced with zeros.",
+  tr("Пороги інтенсивності — лише там, де вони є в джерелі."): "Intensity thresholds are shown only where provided by the source.",
+  tr("Немає карти громад: дані агреговані на рівні районів і міста."): "No hromada map: data are aggregated at district and city level.",
+  tr("Охоплення вакцинацією у % не показується без узгодженого знаменника."): "Vaccination coverage (%) is not shown without a validated denominator.",
+  tr("Нульові дані вакцинації потребують перевірки перед публікацією."): "Zero vaccination values must be verified before publication.",
   "Пошук…": "Search…",
   "Діти до 18 років": "Children under 18",
   "Школярі": "Schoolchildren",
@@ -165,7 +165,7 @@ const EN: Record<string, string> = {
   "На 100 тис. населення": "Per 100,000 population",
   "Записів": "records",
   "записів": "records",
-  "{tr("Усі значення за тиждень — нулі. Потрібно підтвердити, що це фактичні нулі, а не незаповнений шаблон.")}": "All values for this week are zero. Confirm these are actual zeros and not an unfilled template.",
+  "{tr("{tr("Усі значення за тиждень — нулі. Потрібно підтвердити, що це фактичні нулі, а не незаповнений шаблон.")}")}": "All values for this week are zero. Confirm these are actual zeros and not an unfilled template.",
   "За територіями": "By territory",
   "усі вакцини": "all vaccines",
   "Карта епідемічної ситуації за районами та м. Тернопіль": "Epidemic situation map by district and Ternopil city",
@@ -343,16 +343,16 @@ function Dashboard() {
         <div className="grid gap-6 lg:grid-cols-5">
           <Card className="lg:col-span-3" title={tr("Випадки за територіями")} sub={tr("Клікніть стовпчик, щоб відфільтрувати. Підсумок не входить до ранжування.")}>
             <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={[...terr].sort((a, b) => (num(b.cases_total) ?? 0) - (num(a.cases_total) ?? 0)).map((r) => ({ name: shortName(r.administrative_territory), full: r.administrative_territory, Випадки: num(r.cases_total), Діти: num(r.cases_children_under_18) }))} layout="vertical" margin={{ left: 20 }}>
+              <BarChart data={[...terr].sort((a, b) => (num(b.cases_total) ?? 0) - (num(a.cases_total) ?? 0)).map((r) => ({ name: shortName(r.administrative_territory), full: r.administrative_territory, [tr("Випадки")]: num(r.cases_total), [tr("Діти")]: num(r.cases_children_under_18) }))} layout="vertical" margin={{ left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                 <XAxis type="number" />
                 <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 12 }} />
                 <Tooltip formatter={(v: number) => fmt(v)} />
                 <Legend />
-                <Bar dataKey="Випадки" radius={[0, 4, 4, 0]} cursor="pointer" onClick={(d: { full: string }) => setTerritory(d.full === territory ? null : d.full)}>
+                <Bar dataKey={tr("Випадки")} radius={[0, 4, 4, 0]} cursor="pointer" onClick={(d: { full: string }) => setTerritory(d.full === territory ? null : d.full)}>
                   {terr.map((r, i) => <Cell key={i} fill={"var(--chart-1)"} />)}
                 </Bar>
-                <Bar dataKey="Діти" fill="var(--chart-2)" radius={[0, 4, 4, 0]} />
+                <Bar dataKey={tr("Діти")} fill="var(--chart-2)" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </Card>
@@ -798,10 +798,10 @@ function OblastIndicator({ current, previous, week }: { current?: Row; previous?
 
 function Kpis({ focus, prev, prevWeek, label }: { focus?: Row; prev?: Row; prevWeek?: string; label: string }) {
   const items = [
-    { k: "cases_total", t: "Випадки всього", icon: Users, d: 0 },
-    { k: "cases_children_under_18", t: "Діти до 18 років", icon: Baby, d: 0 },
-    { k: "hospitalized_total", t: "Госпіталізовано", icon: BedDouble, d: 0 },
-    { k: "incidence_per_100k", t: "На 100 тис. населення", icon: Activity, d: 1 },
+    { k: "cases_total", t: tr("Випадки всього"), icon: Users, d: 0 },
+    { k: "cases_children_under_18", t: tr("Діти до 18 років"), icon: Baby, d: 0 },
+    { k: "hospitalized_total", t: tr("Госпіталізовано"), icon: BedDouble, d: 0 },
+    { k: "incidence_per_100k", t: tr("На 100 тис. населення"), icon: Activity, d: 1 },
   ];
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -892,7 +892,7 @@ function LevelBadge({ l }: { l: Level }) {
 }
 
 function AgeChart({ r }: { r?: Row }) {
-  const d = AGE_GROUPS.map(([k, n]) => ({ name: n, Випадки: num(r?.[k]) }));
+  const d = AGE_GROUPS.map(([k, n]) => ({ name: tr(n), [tr("Випадки")]: num(r?.[k]) }));
   return (
     <>
       <ResponsiveContainer width="100%" height={220}>
@@ -901,7 +901,7 @@ function AgeChart({ r }: { r?: Row }) {
           <XAxis dataKey="name" tick={{ fontSize: 12 }} />
           <YAxis />
           <Tooltip formatter={(v: number) => fmt(v)} />
-          <Bar dataKey="Випадки" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
+          <Bar dataKey={tr("Випадки")} fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
       <div className="mt-3 grid grid-cols-2 gap-3">
@@ -936,7 +936,7 @@ function Intensity({ total }: { total?: Row }) {
           {th.map((t, i) => t !== null && (
             <div
               key={i}
-              title={["Низький епідпоріг", "Середній епідпоріг", "Високий епідпоріг"][i] + ": " + fmt(t, 1)}
+              title={tr(["Низький епідпоріг", "Середній епідпоріг", "Високий епідпоріг"][i]) + ": " + fmt(t, 1)}
               className="absolute -top-1.5 h-7 w-1 -translate-x-1/2 rounded-sm border border-background shadow-sm"
               style={{ left: `${Math.min(100, (t / max) * 100)}%`, background: ["#2563eb", "#d97706", "#dc2626"][i], zIndex: 2 }}
             />
@@ -946,7 +946,7 @@ function Intensity({ total }: { total?: Row }) {
           {th.map((t, i) => t !== null && (
             <span key={i} className="inline-flex items-center gap-1.5 font-medium">
               <span className="inline-block h-3 w-1.5 rounded-sm" style={{ background: ["#2563eb", "#d97706", "#dc2626"][i] }} />
-              {["Низький", "Середній", "Високий"][i]} поріг: {fmt(t, 1)}
+              {tr(["Низький", "Середній", "Високий"][i])} {tr("поріг")}: {fmt(t, 1)}
             </span>
           ))}
         </div>
@@ -962,11 +962,11 @@ function IncidenceTrend({ rows, weeks, territory }: { rows: Row[]; weeks: string
     const wr = rows.filter((r) => weekKey(r) === w);
     const r = territory ? wr.find((x) => x.administrative_territory === territory) : totalRow(wr);
     return {
-      name: `тиж. ${w.split("-")[1]} / ${w.split("-")[0]}`,
-      "На 100 тис.": num(r?.incidence_per_100k),
-      "Низький епідпоріг": num(r?.intensity_low_threshold),
-      "Середній поріг": num(r?.intensity_medium_threshold),
-      "Високий поріг": num(r?.intensity_high_threshold),
+      name: `${tr("тиж.")} ${w.split("-")[1]} / ${w.split("-")[0]}`,
+      [tr("На 100 тис.")]: num(r?.incidence_per_100k),
+      [tr("Низький епідпоріг")]: num(r?.intensity_low_threshold),
+      [tr("Середній поріг")]: num(r?.intensity_medium_threshold),
+      [tr("Високий поріг")]: num(r?.intensity_high_threshold),
     };
   });
   return (
@@ -977,10 +977,10 @@ function IncidenceTrend({ rows, weeks, territory }: { rows: Row[]; weeks: string
         <YAxis />
         <Tooltip formatter={(v: number) => fmt(v, 1)} />
         <Legend />
-        <Line type="monotone" dataKey="На 100 тис." stroke="var(--chart-1)" strokeWidth={2.5} connectNulls={false} dot={{ r: 3 }} />
-        <Line type="monotone" dataKey="Низький епідпоріг" stroke="var(--chart-2)" strokeDasharray="6 4" strokeWidth={1.8} dot={false} connectNulls={false} />
-        <Line type="monotone" dataKey="Середній поріг" stroke="var(--chart-3)" strokeDasharray="3 4" strokeWidth={1.8} dot={false} connectNulls={false} />
-        <Line type="monotone" dataKey="Високий поріг" stroke="var(--chart-4)" strokeDasharray="8 4" strokeWidth={1.8} dot={false} connectNulls={false} />
+        <Line type="monotone" dataKey={tr("На 100 тис.")} stroke="var(--chart-1)" strokeWidth={2.5} connectNulls={false} dot={{ r: 3 }} />
+        <Line type="monotone" dataKey={tr("Низький епідпоріг")} stroke="var(--chart-2)" strokeDasharray="6 4" strokeWidth={1.8} dot={false} connectNulls={false} />
+        <Line type="monotone" dataKey={tr("Середній поріг")} stroke="var(--chart-3)" strokeDasharray="3 4" strokeWidth={1.8} dot={false} connectNulls={false} />
+        <Line type="monotone" dataKey={tr("Високий поріг")} stroke="var(--chart-4)" strokeDasharray="8 4" strokeWidth={1.8} dot={false} connectNulls={false} />
       </LineChart>
     </ResponsiveContainer>
   );
@@ -992,9 +992,9 @@ function CasesTrend({ rows, weeks, territory }: { rows: Row[]; weeks: string[]; 
     const r = territory ? wr.find((x) => x.administrative_territory === territory) : totalRow(wr);
     return {
       name: `тиж. ${w.split("-")[1]} / ${w.split("-")[0]}`,
-      "Усього випадків": num(r?.cases_total),
-      "Діти до 18 років": num(r?.cases_children_under_18),
-      "Школярі": num(r?.cases_schoolchildren),
+      [tr("Усього випадків")]: num(r?.cases_total),
+      [tr("Діти до 18 років")]: num(r?.cases_children_under_18),
+      [tr("Школярі")]: num(r?.cases_schoolchildren),
     };
   });
   return (
@@ -1005,9 +1005,9 @@ function CasesTrend({ rows, weeks, territory }: { rows: Row[]; weeks: string[]; 
         <YAxis allowDecimals={false} />
         <Tooltip formatter={(v: number) => fmt(v)} />
         <Legend />
-        <Line type="monotone" dataKey="Усього випадків" stroke="var(--chart-1)" strokeWidth={2.5} connectNulls={false} dot={{ r: 3 }} />
-        <Line type="monotone" dataKey="Діти до 18 років" stroke="var(--chart-2)" strokeWidth={2} connectNulls={false} dot={{ r: 3 }} />
-        <Line type="monotone" dataKey="Школярі" stroke="var(--chart-3)" strokeWidth={2} connectNulls={false} dot={{ r: 3 }} />
+        <Line type="monotone" dataKey={tr("Усього випадків")} stroke="var(--chart-1)" strokeWidth={2.5} connectNulls={false} dot={{ r: 3 }} />
+        <Line type="monotone" dataKey={tr("Діти до 18 років")} stroke="var(--chart-2)" strokeWidth={2} connectNulls={false} dot={{ r: 3 }} />
+        <Line type="monotone" dataKey={tr("Школярі")} stroke="var(--chart-3)" strokeWidth={2} connectNulls={false} dot={{ r: 3 }} />
       </LineChart>
     </ResponsiveContainer>
   );
@@ -1067,11 +1067,11 @@ function Vaccination({ rows, week }: { rows: Row[]; week: string }) {
               </div>
               <div className="mt-4 mb-2 text-xs font-medium uppercase text-muted-foreground">{tr("За територіями")} ({brand === "ВСЬОГО" ? tr("усі вакцини") : brand})</div>
               <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={byTerr.map((r) => ({ name: r.administrative_territory, Щеплено: num(r.vaccinated_this_week) }))}>
+                <BarChart data={byTerr.map((r) => ({ name: r.administrative_territory, [tr("Щеплено")]: num(r.vaccinated_this_week) }))}>
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} />
                   <YAxis allowDecimals={false} />
                   <Tooltip />
-                  <Bar dataKey="Щеплено" fill="var(--teal)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey={tr("Щеплено")} fill="var(--teal)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
