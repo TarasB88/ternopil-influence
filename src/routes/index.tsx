@@ -193,12 +193,32 @@ const EN: Record<string, string> = {
   "Медичні працівники": "Healthcare workers",
   "Вагітні": "Pregnant people",
   "Інші групи ризику": "Other risk groups",
+  "administrative_territory": "Territory",
+  "record_type": "Record type",
+  "year": "Year",
+  "week": "Week",
+  "period_start": "Period start",
+  "period_end": "Period end",
+  "cases_total": "Total cases",
+  "cases_children_under_18": "Children under 18",
+  "cases_schoolchildren": "Schoolchildren",
+  "hospitalized_total": "Hospitalized",
+  "hospitalized_children": "Hospitalized children",
+  "incidence_per_100k": "Incidence per 100,000",
+  "intensity_low_threshold": "Low-intensity threshold",
+  "intensity_medium_threshold": "Medium-intensity threshold",
+  "intensity_high_threshold": "High-intensity threshold",
+  "vaccinated_this_week": "Vaccinated this week",
+  "risk_groups_total": "Risk groups — total",
+  "medical_risk_total": "Medical risk — total",
+  "epidemic_risk_total": "Epidemic risk — total",
   "Language": "Language",
 const tr = (text: string) => {
   if (uiLanguage !== "en") return text;
   if (EN[text]) return EN[text];
   if (text.endsWith(" район")) return text.slice(0, -" район".length) + " District";
   if (text.endsWith(" територіальна громада")) return text.slice(0, -" територіальна громада".length) + " Territorial Hromada";
+  if (/^[a-z][a-z0-9_]*$/.test(text)) return text.split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
   return text;
 };
 
