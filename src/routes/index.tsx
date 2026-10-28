@@ -243,6 +243,7 @@ const tr = (text: string) => {
   "Грип": "Influenza",
   "ГРВІ": "Acute respiratory infections (ARI)",
   "COVID-19 у Тернопільській області": "COVID-19 in Ternopil Oblast",
+
 };
 
 const dataQuery = queryOptions({
