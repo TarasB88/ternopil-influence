@@ -202,7 +202,8 @@ function Dashboard() {
         <Vaccination rows={data.vaccination} week={week} />
 
         <footer className="pb-6 text-center text-xs text-muted-foreground">
-          Джерело: Google Sheets (weekly_respiratory, weekly_vaccination) · оновлено {new Date(data.fetchedAt).toLocaleString("uk-UA")}
+          <p>Джерело: Google Sheets (weekly_respiratory, weekly_vaccination) · оновлено {new Date(data.fetchedAt).toLocaleString("uk-UA")}</p>
+          <p className="mt-2">Розробник: <a href="https://www.linkedin.com/in/taras-burda-410401318/" target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline-offset-4 hover:underline">Taras Burda</a></p>
         </footer>
       </main>
     </div>
