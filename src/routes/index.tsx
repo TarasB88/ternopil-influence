@@ -440,7 +440,7 @@ function TopEpidemiologyStatus({ current }: { current?: Row }) {
 function RespiratorySituation({ week, sample, current, previous, fetchedAt }: { week: string; sample?: Row; current?: Row; previous?: Row; fetchedAt: string }) {
   const n = (row: Row | undefined, key: string) => num(row?.[key]);
   const normalizeMetricKey = (value: string) =>
-    value.normalize("NFKC").trim().replace(/\\s+/g, " ").toLocaleLowerCase("uk-UA");
+    value.normalize("NFKC").trim().replace(/\s+/g, " ").toLocaleLowerCase("uk-UA");
   const optionalMetric = (row: Row | undefined, keys: string[]) => {
     if (!row) return null;
     const rowKeys = Object.keys(row);
