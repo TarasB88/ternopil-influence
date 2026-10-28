@@ -164,7 +164,16 @@ function Dashboard() {
   const { data, refetch, isFetching } = useSuspenseQuery(dataQuery);
   const weeks = useMemo(() => listWeeks(data.respiratory), [data.respiratory]);
   const [week, setWeek] = useState(weeks[weeks.length - 1] ?? "");
-  const [territory, setTerritory] = useState<string | null>(null);\n  const [language, setLanguage] = useState<UiLanguage>("uk");\n  uiLanguage = language;\n  useEffect(() => {\n    document.documentElement.lang = language;\n    try { window.localStorage.setItem("dashboard-language", language); } catch {}\n  }, [language]);\n  useEffect(() => {\n    try { if (window.localStorage.getItem("dashboard-language") === "en") setLanguage("en"); } catch {}\n  }, []);
+  const [territory, setTerritory] = useState<string | null>(null);
+  const [language, setLanguage] = useState<UiLanguage>("uk");
+  uiLanguage = language;
+  useEffect(() => {
+    document.documentElement.lang = language;
+    try { window.localStorage.setItem("dashboard-language", language); } catch {}
+  }, [language]);
+  useEffect(() => {
+    try { if (window.localStorage.getItem("dashboard-language") === "en") setLanguage("en"); } catch {}
+  }, []);
 
   const weekRows = data.respiratory.filter((r) => weekKey(r) === week);
   const terr = territorial(weekRows);
