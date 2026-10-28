@@ -468,8 +468,14 @@ function RespiratorySituation({ week, sample, current, previous, fetchedAt }: { 
   const childShare = cases !== null && cases > 0 && children !== null ? children / cases * 100 : null;
   const schoolShare = children !== null && children > 0 && schoolchildren !== null ? schoolchildren / children * 100 : null;
   const hospitalChildShare = hospital !== null && hospital > 0 && hospitalChildren !== null ? hospitalChildren / hospital * 100 : null;
-  const covid = optionalMetric(current, ["cases_covid19", "covid19_cases", "cases_covid"]);
-  const prevCovid = optionalMetric(previous, ["cases_covid19", "covid19_cases", "cases_covid"]);
+  const covidKeys = [
+    "cases_covid19", "covid19_cases", "cases_covid",
+    "випадків (дорослі) захворювання на covid-19",
+    "Випадків (дорослі) захворювання на COVID-19",
+    "Випадків (дорослі) захворювання на COVID-19 ",
+  ];
+  const covid = optionalMetric(current, covidKeys);
+  const prevCovid = optionalMetric(previous, covidKeys);
   const deaths = optionalMetric(current, ["deaths_total", "deaths_influenza_covid19", "deaths_flu_covid"]);
   const optionalText = (row: Row | undefined, keys: string[]) => {
     const key = keys.find((k) => row?.[k] !== undefined && row?.[k] !== null && String(row[k]).trim() !== "");
