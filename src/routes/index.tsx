@@ -184,7 +184,7 @@ function Dashboard() {
             <AgeChart r={focus} />
           </Card>
           <Card title="Інтенсивність на 100 тис. населення" sub="Рівень показано лише там, де джерело має пороги">
-            <Intensity rows={terr} total={total} />
+            <Intensity total={total} />
           </Card>
         </div>
 
@@ -713,44 +713,41 @@ const Stat = ({ label, v }: { label: string; v: number | null }) => (
   </div>
 );
 
-function Intensity({ rows, total }: { rows: Row[]; total?: Row }) {
-  const all = total ? [total, ...rows] : rows;
-  const max = Math.max(...all.map((r) => num(r.intensity_high_threshold) ?? num(r.incidence_per_100k) ?? 0)) * 1.1;
+function Intensity({ total }: { total?: Row }) {
+  if (!total) return <p className="text-sm text-muted-foreground">Немає обласного показника за цей тиждень.</p>;
+  const r = total;
+  const v = num(r.incidence_per_100k) ?? 0;
+  const th = [num(r.intensity_low_threshold), num(r.intensity_medium_threshold), num(r.intensity_high_threshold)];
+  const max = Math.max(num(r.intensity_high_threshold) ?? 0, v, 1) * 1.1;
   return (
     <div className="space-y-4">
-      {all.map((r) => {
-        const v = num(r.incidence_per_100k) ?? 0;
-        const th = [num(r.intensity_low_threshold), num(r.intensity_medium_threshold), num(r.intensity_high_threshold)];
-        return (
-          <div key={r.administrative_territory!}>
-            <div className="mb-1 flex justify-between text-sm">
-              <span className={r.record_type === "total" ? "font-semibold" : ""}>{r.record_type === "total" ? "Область (підсумок)" : r.administrative_territory}</span>
-              <span className="font-medium">{fmt(num(r.incidence_per_100k), 1)}</span>
-            </div>
-            <div className="relative h-4 rounded-full border border-border bg-muted/70">
-              <div className="h-full rounded-full" style={{ width: `${Math.min(100, (v / max) * 100)}%`, background: LEVEL_COLOR[intensityLevel(r)] === LEVEL_COLOR.nodata ? "var(--chart-3)" : LEVEL_COLOR[intensityLevel(r)] }} />
-              {th.map((t, i) => t !== null && (
-                <div
-                  key={i}
-                  title={["Низький епідпоріг", "Середній епідпоріг", "Високий епідпоріг"][i] + ": " + fmt(t, 1)}
-                  className="absolute -top-1.5 h-7 w-1 -translate-x-1/2 rounded-sm border border-background shadow-sm"
-                  style={{ left: `${Math.min(100, (t / max) * 100)}%`, background: ["#2563eb", "#d97706", "#dc2626"][i], zIndex: 2 }}
-                />
-              ))}
-            </div>
-            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
-              {th.map((t, i) => t !== null && (
-                <span key={i} className="inline-flex items-center gap-1.5 font-medium">
-                  <span className="inline-block h-3 w-1.5 rounded-sm" style={{ background: ["#2563eb", "#d97706", "#dc2626"][i] }} />
-                  {["Низький", "Середній", "Високий"][i]}: {fmt(t, 1)}
-                </span>
-              ))}
-            </div>
-            <div className="mt-1"><LevelBadge l={intensityLevel(r)} /></div>
-          </div>
-        );
-      })}
-      <p className="text-xs text-muted-foreground">Вертикальні мітки — пороги низького/середнього/високого рівня (наведіть для значення). Пороги міста не переносяться на райони.</p>
+      <div>
+        <div className="mb-1 flex justify-between gap-3 text-sm">
+          <span className="font-semibold">Тернопільська область</span>
+          <span className="font-semibold">{fmt(num(r.incidence_per_100k), 1)} на 100 тис.</span>
+        </div>
+        <div className="relative h-4 rounded-full border border-border bg-muted/70">
+          <div className="h-full rounded-full" style={{ width: `${Math.min(100, (v / max) * 100)}%`, background: LEVEL_COLOR[intensityLevel(r)] === LEVEL_COLOR.nodata ? "var(--chart-3)" : LEVEL_COLOR[intensityLevel(r)] }} />
+          {th.map((t, i) => t !== null && (
+            <div
+              key={i}
+              title={["Низький епідпоріг", "Середній епідпоріг", "Високий епідпоріг"][i] + ": " + fmt(t, 1)}
+              className="absolute -top-1.5 h-7 w-1 -translate-x-1/2 rounded-sm border border-background shadow-sm"
+              style={{ left: `${Math.min(100, (t / max) * 100)}%`, background: ["#2563eb", "#d97706", "#dc2626"][i], zIndex: 2 }}
+            />
+          ))}
+        </div>
+        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+          {th.map((t, i) => t !== null && (
+            <span key={i} className="inline-flex items-center gap-1.5 font-medium">
+              <span className="inline-block h-3 w-1.5 rounded-sm" style={{ background: ["#2563eb", "#d97706", "#dc2626"][i] }} />
+              {["Низький", "Середній", "Високий"][i]} поріг: {fmt(t, 1)}
+            </span>
+          ))}
+        </div>
+        <div className="mt-1"><LevelBadge l={intensityLevel(r)} /></div>
+      </div>
+      <p className="text-xs text-muted-foreground">Показано лише обласний показник; вертикальні мітки позначають пороги низького, середнього та високого рівня.</p>
     </div>
   );
 }
