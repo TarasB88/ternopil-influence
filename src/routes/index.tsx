@@ -112,7 +112,24 @@ const EN: Record<string, string> = {
   "Низький": "Low",
   "Середній": "Medium",
   "Високий": "High",
-  "Поріг": "threshold"
+  "Поріг": "threshold",
+  "Тернопільська область": "Ternopil Oblast",
+  "Вакцинація проти грипу": "Influenza vaccination",
+  "Показано лише обласний показник; вертикальні мітки позначають пороги низького, середнього та високого рівня.": "Only the oblast indicator is shown; vertical markers indicate low, medium and high thresholds.",
+  "Якщо в таблиці є офіційні пороги інтенсивності, використовуються вони; інакше застосовано технічну шкалу: &lt;500, 500–999, ≥1000 на 100 тис.": "Official intensity thresholds are used when available; otherwise, a technical scale is applied: <500, 500–999, ≥1000 per 100,000.",
+  "Зареєстровано": "Registered",
+  "Зміна": "Change",
+  "Зростання": "Increase",
+  "Зниження": "Decrease",
+  "Без змін": "No change",
+  "На минулому тижні": "Last week",
+  "Усього випадків": "Total cases",
+  "Низький епідпоріг": "Low epidemic threshold",
+  "Середній поріг": "Medium threshold",
+  "Високий поріг": "High threshold",
+  "Щеплено": "Vaccinated",
+  "Низький поріг": "Low threshold",
+  "Дорослі = всього − діти до 18": "Adults = total − children under 18"
 };
 const tr = (text: string) => uiLanguage === "en" ? (EN[text] ?? text) : text;
 
@@ -147,7 +164,7 @@ function Dashboard() {
   const { data, refetch, isFetching } = useSuspenseQuery(dataQuery);
   const weeks = useMemo(() => listWeeks(data.respiratory), [data.respiratory]);
   const [week, setWeek] = useState(weeks[weeks.length - 1] ?? "");
-  const [territory, setTerritory] = useState<string | null>(null);\n  const [language, setLanguage] = useState<UiLanguage>("uk");\n  uiLanguage = language;\n  useEffect(() => { document.documentElement.lang = language; }, [language]);
+  const [territory, setTerritory] = useState<string | null>(null);\n  const [language, setLanguage] = useState<UiLanguage>("uk");\n  uiLanguage = language;\n  useEffect(() => {\n    document.documentElement.lang = language;\n    try { window.localStorage.setItem("dashboard-language", language); } catch {}\n  }, [language]);\n  useEffect(() => {\n    try { if (window.localStorage.getItem("dashboard-language") === "en") setLanguage("en"); } catch {}\n  }, []);
 
   const weekRows = data.respiratory.filter((r) => weekKey(r) === week);
   const terr = territorial(weekRows);
@@ -202,7 +219,7 @@ function Dashboard() {
                 </div>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-300/15 px-2 py-1 text-[10px] font-semibold text-emerald-100"><span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> {tr("Дані дашборду")}</span>
               </div>
-              <div className="mt-3 text-sm text-white/70">Тиждень {sample?.week ?? "—"} / {sample?.year ?? "—"}</div>
+              <div className="mt-3 text-sm text-white/70">{tr("Тиждень")} {sample?.week ?? "—"} / {sample?.year ?? "—"}</div>
               <div className="mt-1 text-lg font-bold tracking-tight md:text-xl">{fmtDate(sample?.period_start ?? null)} – {fmtDate(sample?.period_end ?? null)}</div>
               <div className="mt-3 flex items-center gap-1.5 border-t border-white/10 pt-3 text-xs text-cyan-100/65"><MapPin className="h-3.5 w-3.5" /> {tr("Тернопільська область, Україна")}</div>
             </div>
@@ -482,7 +499,7 @@ function DistrictMap({ rows, selected, onSelect }: { rows: Row[]; selected: stri
               <div className="flex items-center gap-2 text-sm font-semibold"><span className="h-3 w-3 shrink-0 rounded-full" style={{ background: mapFill(cityRow) }} />{tr("м. Тернопіль")}</div>
               <div className="mt-2 grid grid-cols-2 gap-2 text-xs"><span className="text-muted-foreground">{tr("Випадки")}</span><strong className="text-right">{fmt(num(cityRow?.cases_total))}</strong><span className="text-muted-foreground">{tr("На 100 тис.")}</span><strong className="text-right">{fmt(num(cityRow?.incidence_per_100k), 1)}</strong><span className="text-muted-foreground">{tr("Рівень")}</span><span className="text-right">{cityRow ? levelLabel[intensityLevel(cityRow)] : "Немає окремого рядка"}</span></div>
             </button>
-            <div className="rounded-md border p-3"><p className="mb-2 text-xs font-semibold">{tr("Захворюваність на 100 тис. населення")}</p><div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs"><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#d9f0e3"}} />{tr("0 / нижче порогу")}</span><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#91cfb0"}} />{tr("Низька")}</span><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#f6c85f"}} />{tr("Середня")}</span><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#d95f59"}} />{tr("Висока")}</span><span className="col-span-2 flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#d1d5db"}} />{tr("Немає значення показника")}</span></div><p className="mt-2 text-[11px] text-muted-foreground">Якщо в таблиці є офіційні пороги інтенсивності, використовуються вони; інакше застосовано технічну шкалу: &lt;500, 500–999, ≥1000 на 100 тис.</p></div>
+            <div className="rounded-md border p-3"><p className="mb-2 text-xs font-semibold">{tr("Захворюваність на 100 тис. населення")}</p><div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs"><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#d9f0e3"}} />{tr("0 / нижче порогу")}</span><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#91cfb0"}} />{tr("Низька")}</span><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#f6c85f"}} />{tr("Середня")}</span><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#d95f59"}} />{tr("Висока")}</span><span className="col-span-2 flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#d1d5db"}} />{tr("Немає значення показника")}</span></div><p className="mt-2 text-[11px] text-muted-foreground">{tr("Якщо в таблиці є офіційні пороги інтенсивності, використовуються вони; інакше застосовано технічну шкалу: &lt;500, 500–999, ≥1000 на 100 тис.")}</p></div>
             <p className="text-xs text-muted-foreground">{tr("Геодані:")} <a className="underline" href="https://github.com/slawomirmatuszak/ukrainian_geodata" target="_blank" rel="noreferrer">Ukrainian geodata (CC BY 4.0)</a>{tr(". Маркер міста — координати центру Тернополя; це не адміністративний контур міста.")}</p>
           </div>
         </div>
@@ -845,7 +862,7 @@ function Intensity({ total }: { total?: Row }) {
     <div className="space-y-4">
       <div>
         <div className="mb-1 flex justify-between gap-3 text-sm">
-          <span className="font-semibold">Тернопільська область</span>
+          <span className="font-semibold">{tr("Тернопільська область")}</span>
           <span className="font-semibold">{fmt(num(r.incidence_per_100k), 1)} на 100 тис.</span>
         </div>
         <div className="relative h-4 rounded-full border border-border bg-muted/70">
@@ -869,7 +886,7 @@ function Intensity({ total }: { total?: Row }) {
         </div>
         <div className="mt-1"><LevelBadge l={intensityLevel(r)} /></div>
       </div>
-      <p className="text-xs text-muted-foreground">Показано лише обласний показник; вертикальні мітки позначають пороги низького, середнього та високого рівня.</p>
+      <p className="text-xs text-muted-foreground">{tr("Показано лише обласний показник; вертикальні мітки позначають пороги низького, середнього та високого рівня.")}</p>
     </div>
   );
 }
@@ -943,7 +960,7 @@ function Vaccination({ rows, week }: { rows: Row[]; week: string }) {
     <section className="rounded-xl border-2 border-teal/40 bg-card p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="section-title flex items-center gap-2"><Syringe className="h-5 w-5 text-teal" /> Вакцинація проти грипу</h2>
+          <h2 className="section-title flex items-center gap-2"><Syringe className="h-5 w-5 text-teal" /> {tr("Вакцинація проти грипу")}</h2>
           <p className="text-xs text-muted-foreground">{tr("Окремий блок · аркуш weekly_vaccination · без відсотків охоплення (немає знаменника)")}</p>
         </div>
         <div className="flex flex-wrap gap-2 text-sm">
