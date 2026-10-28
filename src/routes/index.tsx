@@ -18,8 +18,6 @@ import {
 } from "@/lib/metrics";
 
 type UiLanguage = "uk" | "en";
-let uiLanguage: UiLanguage = "uk";
-const setUiLanguage = (language: UiLanguage) => { uiLanguage = language; };
 const EN: Record<string, string> = {
   "Епідеміологічний нагляд · Тернопільська область": "Epidemiological surveillance · Ternopil Oblast",
   "Грип, ГРВІ та COVID-19": "Influenza, ARI and COVID-19",
@@ -240,7 +238,7 @@ const EN: Record<string, string> = {
 };
 
 const tr = (text: string) => {
-  if (uiLanguage !== "en") return text;
+  if (typeof document === "undefined" || document.documentElement.lang !== "en") return text;
   if (EN[text]) return EN[text];
   if (text.endsWith(" район")) return text.slice(0, -" район".length) + " District";
   if (text.endsWith(" територіальна громада")) return text.slice(0, -" територіальна громада".length) + " Territorial Hromada";
@@ -280,16 +278,13 @@ function Dashboard() {
   const weeks = useMemo(() => listWeeks(data.respiratory), [data.respiratory]);
   const [week, setWeek] = useState(weeks[weeks.length - 1] ?? "");
   const [territory, setTerritory] = useState<string | null>(null);
-  const [language, setLanguage] = useState<UiLanguage>("uk");
-  setUiLanguage(language);
+  const [language, setLanguage] = useState<UiLanguage>(() => {
+    try { return typeof window !== "undefined" && window.localStorage.getItem("dashboard-language") === "en" ? "en" : "uk"; } catch { return "uk"; }
+  });
   useEffect(() => {
     document.documentElement.lang = language;
     try { window.localStorage.setItem("dashboard-language", language); } catch {}
   }, [language]);
-  useEffect(() => {
-    try { if (window.localStorage.getItem("dashboard-language") === "en") setLanguage("en"); } catch {}
-  }, []);
-
   const weekRows = data.respiratory.filter((r) => weekKey(r) === week);
   const terr = territorial(weekRows);
   const total = totalRow(weekRows);
@@ -338,8 +333,8 @@ function Dashboard() {
               <div className="flex items-center justify-between gap-4">
                 <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-cyan-100/75"><CalendarDays className="h-4 w-4" /> {tr("Звітний період")}</span>
                 <div className="flex items-center gap-1 rounded-lg border border-white/15 bg-white/10 p-1" aria-label={tr("Language")}>
-                  <button type="button" onClick={() => setLanguage("uk")} aria-pressed={language === "uk"} className={`rounded-md px-2 py-1 text-[10px] font-bold ${language === "uk" ? "bg-white text-slate-900" : "text-white/80 hover:bg-white/10"}`}>UA</button>
-                  <button type="button" onClick={() => setLanguage("en")} aria-pressed={language === "en"} className={`rounded-md px-2 py-1 text-[10px] font-bold ${language === "en" ? "bg-white text-slate-900" : "text-white/80 hover:bg-white/10"}`}>EN</button>
+                  <button type="button" onClick={() => { document.documentElement.lang = "uk"; setLanguage("uk"); }} aria-pressed={language === "uk"} className={`rounded-md px-2 py-1 text-[10px] font-bold ${language === "uk" ? "bg-white text-slate-900" : "text-white/80 hover:bg-white/10"}`}>UA</button>
+                  <button type="button" onClick={() => { document.documentElement.lang = "en"; setLanguage("en"); }} aria-pressed={language === "en"} className={`rounded-md px-2 py-1 text-[10px] font-bold ${language === "en" ? "bg-white text-slate-900" : "text-white/80 hover:bg-white/10"}`}>EN</button>
                 </div>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-300/15 px-2 py-1 text-[10px] font-semibold text-emerald-100"><span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> {tr("Дані дашборду")}</span>
               </div>
