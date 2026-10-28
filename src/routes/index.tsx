@@ -481,6 +481,15 @@ function RespiratorySituation({ week, sample, current, previous, fetchedAt }: { 
   ];
   const covid = optionalMetric(current, covidKeys);
   const prevCovid = optionalMetric(previous, covidKeys);
+  const caseWord = (value: number | null) => {
+    if (value === null) return "випадків";
+    const n = Math.abs(Math.trunc(value)) % 100;
+    const last = n % 10;
+    if (n > 10 && n < 20) return "випадків";
+    if (last === 1) return "випадок";
+    if (last >= 2 && last <= 4) return "випадки";
+    return "випадків";
+  };
   const deaths = optionalMetric(current, ["deaths_total", "deaths_influenza_covid19", "deaths_flu_covid"]);
   const optionalText = (row: Row | undefined, keys: string[]) => {
     const key = keys.find((k) => row?.[k] !== undefined && row?.[k] !== null && String(row[k]).trim() !== "");
@@ -532,7 +541,7 @@ function RespiratorySituation({ week, sample, current, previous, fetchedAt }: { 
           <p>Загальна захворюваність на грип, ГРВІ та COVID-19 за останні 7 днів склала {incidenceText} випадки на 100 тисяч населення (захворіло {totalCasesText} осіб), що на {lowThresholdText} епідемічного порогу низької інтенсивності.</p>
           <p>За останній ({sample?.week ?? week.split("-")[1] ?? "—"}) тиждень ({reportDay}) кількість захворілих ГРВІ у порівнянні з попереднім тижнем {direction(pctChange)} на {formatChange(pctChange)} ({totalCasesText} випадків проти {prevCases === null ? "—" : fmt(prevCases)}). Питома вага дітей серед хворих склала {fmtPct(childShare)}% ({children === null ? "—" : fmt(children)} ос.), школярів – {fmtPct(schoolShare)}% ({schoolchildren === null ? "—" : fmt(schoolchildren)} ос.) від усіх захворілих дітей. У порівнянні з попереднім тижнем відмічається {direction(childrenChange)} кількість хворих на ГРВІ дітей на {formatChange(childrenChange)} ({children === null ? "—" : fmt(children)} випадків проти {prevChildren === null ? "—" : fmt(prevChildren)}), школярів – {direction(schoolChange)} на {formatChange(schoolChange)} ({schoolchildren === null ? "—" : fmt(schoolchildren)} випадків проти {prevSchoolchildren === null ? "—" : fmt(prevSchoolchildren)}).</p>
           <p>Госпіталізовано за звітний тиждень {hospital === null ? "—" : fmt(hospital)} осіб, із них {hospitalChildren === null ? "—" : fmt(hospitalChildren)} дітей ({fmtPct(hospitalChildShare)}%). Кількість госпіталізованих {direction(hospitalChange)} у порівнянні з минулим тижнем на {formatChange(hospitalChange)} (госпіталізовано {hospital === null ? "—" : fmt(hospital)} осіб проти {prevHospital === null ? "—" : fmt(prevHospital)}).</p>
-          <p>За тиждень зареєстровано {covid === null ? "—" : fmt(covid)} випадків (дорослі) захворювання на COVID-19 (на минулому тижні – {prevCovid === null ? "—" : fmt(prevCovid)} випадків).</p>
+          <p>За тиждень зареєстровано {covid === null ? "—" : fmt(covid)} {caseWord(covid)} (дорослі) захворювання на COVID-19 (на минулому тижні – {prevCovid === null ? "—" : fmt(prevCovid)} {caseWord(prevCovid)}).</p>
         </div>
       )}
     </Card>
