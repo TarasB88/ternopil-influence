@@ -293,6 +293,16 @@ function Dashboard() {
   useEffect(() => {
     if (!languageReady) return;
     document.documentElement.lang = language;
+    const pageTitle = language === "en"
+      ? "Influenza, ARI, COVID-19 and vaccination — Ternopil Oblast"
+      : "Грип, ГРВІ, COVID-19 та вакцинація — Тернопільська область";
+    const pageDescription = language === "en"
+      ? "Weekly epidemiological dashboard: incidence, hospitalizations, epidemic intensity and influenza vaccination."
+      : "Щотижневий епідемічний дашборд: захворюваність, госпіталізації, інтенсивність і щеплення проти грипу.";
+    document.title = pageTitle;
+    document.querySelector('meta[name="description"]')?.setAttribute("content", pageDescription);
+    document.querySelector('meta[property="og:title"]')?.setAttribute("content", language === "en" ? "Epidemiological monitoring in Ternopil Oblast" : "Епідмоніторинг Тернопільщини");
+    document.querySelector('meta[property="og:description"]')?.setAttribute("content", language === "en" ? "Weekly data on influenza, ARI, COVID-19 and vaccination." : "Щотижневі дані про грип, ГРВІ, COVID-19 та вакцинацію.");
     try { window.localStorage.setItem("dashboard-language", language); } catch {}
   }, [language, languageReady]);
   const weekRows = data.respiratory.filter((r) => weekKey(r) === week);
@@ -406,7 +416,7 @@ function Dashboard() {
         <div className="grid gap-6 lg:grid-cols-5">
           <Card className="lg:col-span-3" title={tr("Випадки за територіями")} sub={tr("Клікніть стовпчик, щоб відфільтрувати. Підсумок не входить до ранжування.")}>
             <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={[...terr].sort((a, b) => (num(b.cases_total) ?? 0) - (num(a.cases_total) ?? 0)).map((r) => ({ name: shortName(r.administrative_territory), full: r.administrative_territory, [tr("Випадки")]: num(r.cases_total), [tr("Діти")]: num(r.cases_children_under_18) }))} layout="vertical" margin={{ left: 20 }}>
+              <BarChart data={[...terr].sort((a, b) => (num(b.cases_total) ?? 0) - (num(a.cases_total) ?? 0)).map((r) => ({ name: tr(shortName(r.administrative_territory)), full: r.administrative_territory, [tr("Випадки")]: num(r.cases_total), [tr("Діти")]: num(r.cases_children_under_18) }))} layout="vertical" margin={{ left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                 <XAxis type="number" />
                 <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 12 }} />
