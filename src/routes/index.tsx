@@ -192,8 +192,7 @@ const EN: Record<string, string> = {
   "Діти 6 міс – 5 років": "Children aged 6 months–5 years",
   "Медичні працівники": "Healthcare workers",
   "Вагітні": "Pregnant people",
-  "Інші групи ризику": "Other risk groups"
-
+  "Інші групи ризику": "Other risk groups",
   "Language": "Language",
 const tr = (text: string) => {
   if (uiLanguage !== "en") return text;
