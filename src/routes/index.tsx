@@ -765,12 +765,14 @@ function OblastIndicator({ current, previous, week }: { current?: Row; previous?
   const changeLabel = (value: number | null) =>
     value === null ? tr("немає даних для порівняння") : `${value > 0 ? "+" : ""}${fmt(value, 1)}% ${tr("до попереднього тижня")}`;
   const thresholdLabel = incidence === null || low === null
-    ? "Порівняння з епідемічним порогом: немає даних"
+    ? tr("Порівняння з епідемічним порогом: немає даних")
     : incidence < low
-      ? `${fmt(((low - incidence) / low) * 100, 1)}% нижче порогу низької інтенсивності`
+      ? (language === "en"
+          ? `${fmt(((low - incidence) / low) * 100, 1)}% below the low-intensity threshold`
+          : `${fmt(((low - incidence) / low) * 100, 1)}% нижче порогу низької інтенсивності`)
       : medium !== null && incidence >= medium
-        ? high !== null && incidence >= high ? "Досягнуто порогу високої інтенсивності" : "Досягнуто порогу середньої інтенсивності"
-        : "Досягнуто порогу низької інтенсивності";
+        ? high !== null && incidence >= high ? tr("Досягнуто порогу високої інтенсивності") : tr("Досягнуто порогу середньої інтенсивності")
+        : tr("Досягнуто порогу низької інтенсивності");
   return (
     <section className="rounded-xl border-2 border-primary/20 bg-card p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -798,7 +800,7 @@ function OblastIndicator({ current, previous, week }: { current?: Row; previous?
         </div>
         <div className="rounded-lg bg-muted/60 p-4">
           <div className="text-xs text-muted-foreground">{tr("Епідемічний поріг")}</div>
-          <div className="mt-1 text-base font-semibold">{tr(thresholdLabel)}</div>
+          <div className="mt-1 text-base font-semibold">{thresholdLabel}</div>
           <div className="mt-1 text-xs text-muted-foreground">
             {low === null ? tr("Пороги відсутні в джерелі") : `${tr("Низький")}: ${fmt(low, 1)}${medium === null ? "" : ` · ${tr("Середній")}: ${fmt(medium, 1)}`}${high === null ? "" : ` · ${tr("Високий")}: ${fmt(high, 1)}`}`}
           </div>
