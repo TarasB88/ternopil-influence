@@ -898,7 +898,7 @@ function ChildAdult({ r }: { r?: Row }) {
         {d.map((x, i) => (
           <div key={x.name}>
             <div className="flex items-center gap-2 text-sm"><span className="h-3 w-3 rounded-sm" style={{ background: CH[i] }} />{x.name}</div>
-            <div className="font-display text-2xl font-semibold">{((x.value / all) * 100).toLocaleString("uk-UA", { maximumFractionDigits: 1 })}%</div>
+            <div className="font-display text-2xl font-semibold">{((x.value / all) * 100).toLocaleString(typeof document !== "undefined" && document.documentElement.lang === "en" ? "en-GB" : "uk-UA", { maximumFractionDigits: 1 })}%</div>
             <div className="text-xs text-muted-foreground">{fmt(x.value)} {tr("випадків")}</div>
           </div>
         ))}
