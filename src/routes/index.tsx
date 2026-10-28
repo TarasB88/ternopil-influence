@@ -19,6 +19,7 @@ import {
 
 type UiLanguage = "uk" | "en";
 let uiLanguage: UiLanguage = "uk";
+const setUiLanguage = (language: UiLanguage) => { uiLanguage = language; };
 const EN: Record<string, string> = {
   "Епідеміологічний нагляд · Тернопільська область": "Epidemiological surveillance · Ternopil Oblast",
   "Грип, ГРВІ та COVID-19": "Influenza, ARI and COVID-19",
@@ -280,7 +281,7 @@ function Dashboard() {
   const [week, setWeek] = useState(weeks[weeks.length - 1] ?? "");
   const [territory, setTerritory] = useState<string | null>(null);
   const [language, setLanguage] = useState<UiLanguage>("uk");
-  uiLanguage = language;
+  setUiLanguage(language);
   useEffect(() => {
     document.documentElement.lang = language;
     try { window.localStorage.setItem("dashboard-language", language); } catch {}
