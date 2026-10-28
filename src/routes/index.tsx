@@ -439,9 +439,14 @@ function TopEpidemiologyStatus({ current }: { current?: Row }) {
 
 function RespiratorySituation({ week, sample, current, previous, fetchedAt }: { week: string; sample?: Row; current?: Row; previous?: Row; fetchedAt: string }) {
   const n = (row: Row | undefined, key: string) => num(row?.[key]);
+  const normalizeMetricKey = (value: string) =>
+    value.normalize("NFKC").trim().replace(/\\s+/g, " ").toLocaleLowerCase("uk-UA");
   const optionalMetric = (row: Row | undefined, keys: string[]) => {
-    const key = keys.find((k) => row?.[k] !== undefined);
-    return key ? num(row?.[key]) : null;
+    if (!row) return null;
+    const rowKeys = Object.keys(row);
+    const matchedKey = keys.map(normalizeMetricKey);
+    const key = rowKeys.find((rowKey) => matchedKey.includes(normalizeMetricKey(rowKey)));
+    return key ? num(row[key]) : null;
   };
   const fmtPct = (v: number | null) => v === null ? "—" : fmt(v, 1);
   const deltaPct = (now: number | null, before: number | null) =>
