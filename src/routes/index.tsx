@@ -371,8 +371,8 @@ function Dashboard() {
       </header>
 
       {/* Filters */}
-      <div className="sticky top-0 z-20 border-b bg-card/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3 md:px-6">
+      <div className="sticky top-0 z-20 mx-auto w-full max-w-7xl border-b bg-card/95 backdrop-blur">
+        <div className="flex flex-wrap items-center gap-3 px-4 py-3 md:px-6">
           <label className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">{tr("Тиждень")}</span>
             <select value={week} onChange={(e) => setWeek(e.target.value)} className="rounded-md border bg-background px-2 py-1.5">
