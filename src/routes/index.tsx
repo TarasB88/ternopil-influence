@@ -11,6 +11,7 @@ import {
   ChartNoAxesCombined, Thermometer, Hospital, ShieldCheck, ClipboardList,
 } from "lucide-react";
 import * as XLSX from "xlsx";
+import { TerritoryMap } from "@/components/TerritoryMap";
 import { getDashboardData, type Row } from "@/lib/sheets.functions";
 import {
   AGE_GROUPS, RECORD_TYPE_LABEL, RISK_GROUPS, fmt, intensityLevel, levelLabel, listWeeks, num,
@@ -441,7 +442,7 @@ function Dashboard() {
           <TerritoryTable rows={total ? [...terr, total] : terr} selected={territory} onSelect={setTerritory} />
         </Card>
 
-        <DistrictMap rows={terr} selected={territory} onSelect={setTerritory} />
+        <Card title={tr("Карта територій")} sub={tr("Райони та м. Тернопіль · клік по території фільтрує весь дашборд")}><TerritoryMap rows={terr} selected={territory} onSelect={setTerritory} /></Card>
 
         <div className="grid gap-6 lg:grid-cols-2">
           <Card title={tr("Вікова структура випадків")} sub={tr("Вікові групи дітей; «діти до 18» і «школярі» — окремі, перехресні категорії, не сумуються")}>
