@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer,
   Tooltip, XAxis, YAxis, Legend,
@@ -8,7 +8,7 @@ import {
 import {
   Activity, AlertTriangle, Baby, BedDouble, Download, RefreshCw, RotateCcw, Search, Syringe, Users, X,
   ArrowUpDown, ShieldPlus, Microscope, HeartPulse, MapPin, CalendarDays, Stethoscope,
-  ChartNoAxesCombined, Thermometer, Hospital, ShieldCheck, ClipboardList,
+  ChartNoAxesCombined, Thermometer, Hospital, ShieldCheck, ClipboardList, Maximize2, Minimize2,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { TerritoryMap } from "@/components/TerritoryMap";
@@ -213,6 +213,8 @@ const EN: Record<string, string> = {
   "medical_risk_total": "Medical risk — total",
   "epidemic_risk_total": "Epidemic risk — total",
   "Language": "Language",
+  "На весь екран": "Full screen",
+  "Вийти з повноекранного режиму": "Exit full screen",
   "Кременецький район": "Kremenets District",
   "Тернопільський район": "Ternopil District",
   "Чортківський район": "Chortkiv District",
@@ -279,6 +281,23 @@ const shortName = (s: string | null) => (s ?? "").replace(" район", "");
 
 function Dashboard() {
   const { data, refetch, isFetching } = useSuspenseQuery(dataQuery);
+  const dashboardRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  useEffect(() => {
+    const syncFullscreen = () => setIsFullscreen(document.fullscreenElement === dashboardRef.current);
+    document.addEventListener("fullscreenchange", syncFullscreen);
+    return () => document.removeEventListener("fullscreenchange", syncFullscreen);
+  }, []);
+  const toggleFullscreen = async () => {
+    const element = dashboardRef.current;
+    if (!element) return;
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await element.requestFullscreen();
+    } catch (error) {
+      console.error("Unable to toggle dashboard fullscreen:", error);
+    }
+  };
   const weeks = useMemo(() => listWeeks(data.respiratory), [data.respiratory]);
   const [week, setWeek] = useState(weeks[weeks.length - 1] ?? "");
   const [territory, setTerritory] = useState<string | null>(null);
@@ -323,7 +342,7 @@ function Dashboard() {
   const sample = weekRows[0];
 
   return (
-    <div className="min-h-screen">
+    <div ref={dashboardRef} className={`min-h-screen ${isFullscreen ? "h-screen overflow-y-auto bg-background" : ""}`}>
       <header className="relative isolate w-full overflow-hidden rounded-b-2xl bg-gradient-to-br from-slate-950 via-teal-950 to-cyan-900 text-white shadow-lg">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -right-20 -top-32 h-96 w-96 rounded-full border border-white/10" />
@@ -360,6 +379,16 @@ function Dashboard() {
                   <button type="button" onClick={() => { document.documentElement.lang = "uk"; setLanguage("uk"); }} aria-pressed={language === "uk"} className={`rounded-md px-2 py-1 text-[10px] font-bold ${language === "uk" ? "bg-white text-slate-900" : "text-white/80 hover:bg-white/10"}`}>UA</button>
                   <button type="button" onClick={() => { document.documentElement.lang = "en"; setLanguage("en"); }} aria-pressed={language === "en"} className={`rounded-md px-2 py-1 text-[10px] font-bold ${language === "en" ? "bg-white text-slate-900" : "text-white/80 hover:bg-white/10"}`}>EN</button>
                 </div>
+                <button
+                  type="button"
+                  onClick={toggleFullscreen}
+                  aria-label={tr(isFullscreen ? "Вийти з повноекранного режиму" : "На весь екран")}
+                  title={tr(isFullscreen ? "Вийти з повноекранного режиму" : "На весь екран")}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/10 px-2.5 py-1.5 text-[11px] font-semibold text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200"
+                >
+                  {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+                  <span className="hidden sm:inline">{tr(isFullscreen ? "Вийти з повноекранного режиму" : "На весь екран")}</span>
+                </button>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-300/15 px-2 py-1 text-[10px] font-semibold text-emerald-100"><span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> {tr("Дані дашборду")}</span>
               </div>
               <div className="mt-2 text-xs text-white/70">{tr("Тиждень")} {sample?.week ?? "—"} / {sample?.year ?? "—"}</div>
