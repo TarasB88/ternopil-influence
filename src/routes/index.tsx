@@ -331,29 +331,29 @@ function Dashboard() {
           <div className="absolute right-24 top-12 h-40 w-40 rounded-full bg-cyan-400/10 blur-3xl" />
           <div className="absolute bottom-0 left-1/3 h-24 w-96 rounded-full bg-teal-400/10 blur-3xl" />
         </div>
-        <div className="relative mx-auto max-w-7xl px-4 py-7 md:px-6 md:py-9">
-          <div className="flex flex-wrap items-center justify-between gap-6">
-            <div className="flex min-w-0 items-start gap-4">
-              <div className="hidden shrink-0 rounded-2xl border border-white/15 bg-white/10 p-3 shadow-inner backdrop-blur-sm sm:block">
-                <ShieldPlus className="h-12 w-12 text-cyan-200" strokeWidth={1.5} />
+        <div className="relative mx-auto max-w-7xl px-4 py-4 md:px-6 md:py-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex min-w-0 items-start gap-3">
+              <div className="hidden shrink-0 rounded-xl border border-white/15 bg-white/10 p-2 shadow-inner backdrop-blur-sm sm:block">
+                <ShieldPlus className="h-9 w-9 text-cyan-200" strokeWidth={1.5} />
               </div>
               <div className="min-w-0">
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-teal-200/25 bg-teal-300/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-teal-100">
+                <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-teal-200/25 bg-teal-300/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-teal-100">
                   <Microscope className="h-3.5 w-3.5" />
                   {tr("Епідеміологічний нагляд · Тернопільська область")}
                 </div>
-                <h1 className="text-2xl font-extrabold leading-tight tracking-tight md:text-4xl">{tr("Грип, ГРВІ та COVID-19")}</h1>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-cyan-50/80 md:text-base">
+                <h1 className="text-xl font-extrabold leading-tight tracking-tight md:text-3xl">{tr("Грип, ГРВІ та COVID-19")}</h1>
+                <p className="mt-1 max-w-2xl text-xs leading-5 text-cyan-50/80 md:text-sm">
                   {tr("Щотижневий моніторинг захворюваності, госпіталізацій, епідемічної інтенсивності та вакцинації")}
                 </p>
-                <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium text-cyan-50/90">
-                  <span className="inline-flex items-center gap-1.5 rounded-md bg-white/10 px-2.5 py-1.5"><HeartPulse className="h-3.5 w-3.5 text-rose-200" /> {tr("Захворюваність")}</span>
+                <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] font-medium text-cyan-50/90">
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-white/10 px-2 py-1"><HeartPulse className="h-3.5 w-3.5 text-rose-200" /> {tr("Захворюваність")}</span>
                   <span className="inline-flex items-center gap-1.5 rounded-md bg-white/10 px-2.5 py-1.5"><Hospital className="h-3.5 w-3.5 text-sky-200" /> {tr("Госпіталізації")}</span>
                   <span className="inline-flex items-center gap-1.5 rounded-md bg-white/10 px-2.5 py-1.5"><Syringe className="h-3.5 w-3.5 text-emerald-200" /> {tr("Вакцинація")}</span>
                 </div>
               </div>
             </div>
-            <div className="w-full rounded-2xl border border-white/15 bg-slate-950/25 p-4 shadow-xl backdrop-blur-sm sm:w-auto sm:min-w-[260px]">
+            <div className="w-full rounded-xl border border-white/15 bg-slate-950/25 p-3 shadow-xl backdrop-blur-sm sm:w-auto sm:min-w-[240px]">
               <div className="flex items-center justify-between gap-4">
                 <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-cyan-100/75"><CalendarDays className="h-4 w-4" /> {tr("Звітний період")}</span>
                 <div className="flex items-center gap-1 rounded-lg border border-white/15 bg-white/10 p-1" aria-label={tr("Language")}>
@@ -362,9 +362,9 @@ function Dashboard() {
                 </div>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-300/15 px-2 py-1 text-[10px] font-semibold text-emerald-100"><span className="h-1.5 w-1.5 rounded-full bg-emerald-300" /> {tr("Дані дашборду")}</span>
               </div>
-              <div className="mt-3 text-sm text-white/70">{tr("Тиждень")} {sample?.week ?? "—"} / {sample?.year ?? "—"}</div>
-              <div className="mt-1 text-lg font-bold tracking-tight md:text-xl">{fmtDate(sample?.period_start ?? null)} – {fmtDate(sample?.period_end ?? null)}</div>
-              <div className="mt-3 flex items-center gap-1.5 border-t border-white/10 pt-3 text-xs text-cyan-100/65"><MapPin className="h-3.5 w-3.5" /> {tr("Тернопільська область, Україна")}</div>
+              <div className="mt-2 text-xs text-white/70">{tr("Тиждень")} {sample?.week ?? "—"} / {sample?.year ?? "—"}</div>
+              <div className="mt-1 text-base font-bold tracking-tight md:text-lg">{fmtDate(sample?.period_start ?? null)} – {fmtDate(sample?.period_end ?? null)}</div>
+              <div className="mt-2 flex items-center gap-1.5 border-t border-white/10 pt-2 text-[11px] text-cyan-100/65"><MapPin className="h-3.5 w-3.5" /> {tr("Тернопільська область, Україна")}</div>
             </div>
           </div>
         </div>
