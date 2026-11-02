@@ -324,7 +324,7 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen">
-      <header className="relative isolate overflow-hidden bg-gradient-to-br from-slate-950 via-teal-950 to-cyan-900 text-white shadow-lg">
+      <header className="relative isolate mx-auto w-full max-w-7xl overflow-hidden rounded-b-2xl bg-gradient-to-br from-slate-950 via-teal-950 to-cyan-900 text-white shadow-lg">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -right-20 -top-32 h-96 w-96 rounded-full border border-white/10" />
           <div className="absolute -right-8 -top-20 h-72 w-72 rounded-full border border-white/10" />
