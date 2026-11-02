@@ -324,14 +324,14 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen">
-      <header className="relative isolate mx-auto w-full max-w-7xl overflow-hidden rounded-b-2xl bg-gradient-to-br from-slate-950 via-teal-950 to-cyan-900 text-white shadow-lg">
+      <header className="relative isolate w-full overflow-hidden rounded-b-2xl bg-gradient-to-br from-slate-950 via-teal-950 to-cyan-900 text-white shadow-lg">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -right-20 -top-32 h-96 w-96 rounded-full border border-white/10" />
           <div className="absolute -right-8 -top-20 h-72 w-72 rounded-full border border-white/10" />
           <div className="absolute right-24 top-12 h-40 w-40 rounded-full bg-cyan-400/10 blur-3xl" />
           <div className="absolute bottom-0 left-1/3 h-24 w-96 rounded-full bg-teal-400/10 blur-3xl" />
         </div>
-        <div className="relative mx-auto max-w-7xl px-4 py-4 md:px-6 md:py-5">
+        <div className="relative w-full px-4 py-4 md:px-6 md:py-5 xl:px-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex min-w-0 items-start gap-3">
               <div className="hidden shrink-0 rounded-xl border border-white/15 bg-white/10 p-2 shadow-inner backdrop-blur-sm sm:block">
@@ -371,7 +371,7 @@ function Dashboard() {
       </header>
 
       {/* Filters */}
-      <div className="sticky top-0 z-20 mx-auto w-full max-w-7xl border-b bg-card/95 backdrop-blur">
+      <div className="sticky top-0 z-20 w-full border-b bg-card/95 backdrop-blur">
         <div className="flex flex-wrap items-center gap-3 px-4 py-3 md:px-6">
           <label className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">{tr("Тиждень")}</span>
@@ -403,7 +403,7 @@ function Dashboard() {
         </div>
       </div>
 
-      <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 md:px-6">
+      <main className="w-full space-y-6 px-4 py-6 md:px-6 xl:px-8">
         {data.error && (
           <div className="flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm">
             <AlertTriangle className="h-4 w-4" /> {tr(data.error)}
