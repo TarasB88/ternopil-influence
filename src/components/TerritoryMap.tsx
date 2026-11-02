@@ -105,7 +105,6 @@ export function TerritoryMap({ rows, selected, onSelect }: { rows: Row[]; select
             </>
           ) : <span className="text-xs text-muted-foreground">Наведіть або клікніть на територію</span>}
         </div>
-        <p className="text-xs text-muted-foreground">Межі: OpenStreetMap. Рівень районів і міста — карти громад немає, бо даних на рівні громад у джерелі немає. Місто показано поверх Тернопільського району.</p>
       </div>
     </div>
   );
