@@ -235,6 +235,7 @@ const EN: Record<string, string> = {
   "Грип": "Influenza",
   "ГРВІ": "Acute respiratory infections (ARI)",
   "COVID-19 у Тернопільській області": "COVID-19 in Ternopil Oblast",
+
 };
 
 const UK = Object.fromEntries(Object.entries(EN).map(([uk, en]) => [en, uk])) as Record<string, string>;
@@ -577,71 +578,109 @@ function DistrictMap({ rows, selected, onSelect }: { rows: Row[]; selected: stri
   const cityPoint = project([25.5948, 49.5535]);
   const citySelected = !!selected && !!cityRow && selected === cityRow.administrative_territory;
 
-  // If the source has no explicit epidemiological thresholds, use a transparent
-  // fallback scale based on incidence per 100,000 so polygons still show the indicator.
-  const mapLevel = (row: Row | undefined): Level => {
-    if (!row) return "nodata";
-    const incidence = num(row.incidence_per_100k);
-    if (incidence === null) return "nodata";
-    const low = num(row.intensity_low_threshold);
-    const medium = num(row.intensity_medium_threshold);
-    const high = num(row.intensity_high_threshold);
-    if (low !== null && medium !== null && high !== null) return intensityLevel(row);
-    if (incidence >= 1000) return "high";
-    if (incidence >= 500) return "medium";
-    if (incidence > 0) return "low";
-    return "below";
-  };
+  const [metric, setMetric] = useState<"incidence_per_100k" | "cases_total" | "cases_children_under_18" | "hospitalized_total">("incidence_per_100k");
+  const [hovered, setHovered] = useState<string | null>(null);
+  const metricOptions = [
+    { key: "incidence_per_100k", label: "На 100 тис. населення", digits: 1 },
+    { key: "cases_total", label: "Випадки всього", digits: 0 },
+    { key: "cases_children_under_18", label: "Діти до 18", digits: 0 },
+    { key: "hospitalized_total", label: "Госпіталізовано", digits: 0 },
+  ] as const;
+  const activeMetric = metricOptions.find((m) => m.key === metric)!;
+  const metricValue = (row: Row | undefined) => num(row?.[metric]);
+  const metricValues = [...selectedRows.map((g) => metricValue(findRow(g.aliases))), metricValue(cityRow)]
+    .filter((v): v is number => v !== null);
+  const minValue = metricValues.length ? Math.min(...metricValues) : 0;
+  const maxValue = metricValues.length ? Math.max(...metricValues) : 0;
   const mapFill = (row: Row | undefined) => {
-    const level = mapLevel(row);
-    const colors: Record<Level, string> = {
-      below: "#d9f0e3",
-      low: "#91cfb0",
-      medium: "#f6c85f",
-      high: "#d95f59",
-      nodata: "#d1d5db",
-    };
-    return colors[level];
+    const value = metricValue(row);
+    if (value === null) return "#d1d5db";
+    const ratio = maxValue === minValue ? 0.5 : (value - minValue) / (maxValue - minValue);
+    const mix = Math.round(18 + ratio * 72);
+    return `color-mix(in srgb, #dbeafe ${100 - mix}%, #b91c1c ${mix}%)`;
   };
+  const mapLevel = (row: Row | undefined): Level => row ? intensityLevel(row) : "nodata";
+  const fmtMetric = (row: Row | undefined) => fmt(metricValue(row), activeMetric.digits);
+  const activeInfo = hovered ?? selected;
+  const activeRow = activeInfo
+    ? rows.find((r) => r.administrative_territory === activeInfo)
+    : undefined;
 
   return (
-    <Card title={tr("Карта епідемічної ситуації за районами та м. Тернопіль")} sub={tr("Колір показує захворюваність на 100 тис. населення; натисніть район для фільтрації.")}>
+    <Card title={tr("Карта епідемічної ситуації за районами та м. Тернопіль")} sub={tr("Оберіть показник, наведіть курсор або натисніть на територію для перегляду значень і фільтрації дашборду.")}>
       {geoError ? (
         <p className="text-sm text-muted-foreground">{tr("Не вдалося завантажити географічні межі. Перевірте підключення до джерела GeoJSON.")}</p>
       ) : features.length === 0 ? (
         <p className="text-sm text-muted-foreground">{tr("Завантаження географічних меж районів…")}</p>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(220px,1fr)]">
-          <div className="min-w-0 overflow-hidden rounded-lg border bg-muted/20">
-            <svg viewBox="0 0 900 560" role="img" aria-label={tr("Карта Кременецького, Тернопільського, Чортківського районів і міста Тернополя")} className="mx-auto h-auto max-h-[340px] w-full max-w-[560px]">
-              {features.map((f, i) => {
-                const group = getFeatureGroup(f);
-                const row = group ? findRow(group.aliases) : undefined;
-                const level = mapLevel(row);
-                const fill = mapFill(row);
-                return <path key={i} d={ringsToPath(f.geometry?.coordinates)} fill={fill} fillOpacity={selected && group && !group.aliases.some((a) => selected.toLocaleLowerCase("uk-UA").includes(a)) ? 0.35 : 0.88} stroke="var(--border)" strokeWidth="1.8" vectorEffect="non-scaling-stroke" className="cursor-pointer transition-opacity hover:opacity-90" onClick={() => group && row && onSelect(selected === row.administrative_territory ? null : row.administrative_territory ?? null)}><title>{tr(group?.label ?? featureLabel(f) ?? "Район")} · {row ? fmt(num(row.cases_total)) + " " + tr("випадків") + "; " + fmt(num(row.incidence_per_100k), 1) + " " + tr("на 100 тис.") : tr("немає відповідного рядка даних")}</title></path>;
-              })}
-              <line x1={cityPoint[0] - 7} y1={cityPoint[1]} x2={cityPoint[0] + 7} y2={cityPoint[1]} stroke="var(--foreground)" strokeWidth="2.5" />
-              <line x1={cityPoint[0]} y1={cityPoint[1] - 7} x2={cityPoint[0]} y2={cityPoint[1] + 7} stroke="var(--foreground)" strokeWidth="2.5" />
-              <circle cx={cityPoint[0]} cy={cityPoint[1]} r="5" fill={mapFill(cityRow)} stroke="var(--background)" strokeWidth="2" />
-              <text x={cityPoint[0] + 10} y={cityPoint[1] - 10} fontSize="15" fontWeight="700" fill="var(--foreground)" stroke="var(--background)" strokeWidth="3" paintOrder="stroke">{tr("м. Тернопіль")}</text>
-            </svg>
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-2" role="group" aria-label={tr("Показник карти")}>
+            {metricOptions.map((option) => (
+              <button key={option.key} onClick={() => setMetric(option.key)}
+                className={`rounded-md border px-3 py-2 text-sm transition-colors ${metric === option.key ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted"}`}>
+                {tr(option.label)}
+              </button>
+            ))}
           </div>
-          <div className="space-y-3">
-            {selectedRows.map((group) => {
-              const row = findRow(group.aliases);
-              const active = !!row && selected === row.administrative_territory;
-              return <button key={group.key} onClick={() => row && onSelect(active ? null : row.administrative_territory ?? null)} className={`w-full rounded-lg border p-3 text-left transition-colors hover:bg-muted/60 ${active ? "border-primary bg-accent" : "bg-card"}`}>
-                <div className="flex items-center gap-2 text-sm font-semibold"><span className="h-3 w-3 shrink-0 rounded-sm" style={{ background: mapFill(row) }} />{tr(group.label)}</div>
-                <div className="mt-2 grid grid-cols-2 gap-2 text-xs"><span className="text-muted-foreground">{tr("Випадки")}</span><strong className="text-right">{fmt(num(row?.cases_total))}</strong><span className="text-muted-foreground">{tr("На 100 тис.")}</span><strong className="text-right">{fmt(num(row?.incidence_per_100k), 1)}</strong><span className="text-muted-foreground">{tr("Рівень")}</span><span className="text-right">{row ? tr(levelLabel[intensityLevel(row)]) : tr("Немає даних")}</span></div>
-              </button>;
-            })}
-            <button onClick={() => cityRow && onSelect(citySelected ? null : cityRow.administrative_territory ?? null)} className={`w-full rounded-lg border p-3 text-left transition-colors hover:bg-muted/60 ${citySelected ? "border-primary bg-accent" : "bg-card"}`}>
-              <div className="flex items-center gap-2 text-sm font-semibold"><span className="h-3 w-3 shrink-0 rounded-full" style={{ background: mapFill(cityRow) }} />{tr("м. Тернопіль")}</div>
-              <div className="mt-2 grid grid-cols-2 gap-2 text-xs"><span className="text-muted-foreground">{tr("Випадки")}</span><strong className="text-right">{fmt(num(cityRow?.cases_total))}</strong><span className="text-muted-foreground">{tr("На 100 тис.")}</span><strong className="text-right">{fmt(num(cityRow?.incidence_per_100k), 1)}</strong><span className="text-muted-foreground">{tr("Рівень")}</span><span className="text-right">{cityRow ? tr(levelLabel[intensityLevel(cityRow)]) : tr("Немає окремого рядка")}</span></div>
-            </button>
-            <div className="rounded-md border p-3"><p className="mb-2 text-xs font-semibold">{tr("Захворюваність на 100 тис. населення")}</p><div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs"><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#d9f0e3"}} />{tr("0 / нижче порогу")}</span><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#91cfb0"}} />{tr("Низька")}</span><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#f6c85f"}} />{tr("Середня")}</span><span className="flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#d95f59"}} />{tr("Висока")}</span><span className="col-span-2 flex items-center gap-2"><i className="h-3 w-3 rounded-sm" style={{background:"#d1d5db"}} />{tr("Немає значення показника")}</span></div><p className="mt-2 text-[11px] text-muted-foreground">{tr("Якщо в таблиці є офіційні пороги інтенсивності, використовуються вони; інакше застосовано технічну шкалу: &lt;500, 500–999, ≥1000 на 100 тис.")}</p></div>
-            <p className="text-xs text-muted-foreground">{tr("Геодані:")} <a className="underline" href="https://github.com/slawomirmatuszak/ukrainian_geodata" target="_blank" rel="noreferrer">Ukrainian geodata (CC BY 4.0)</a>{tr(". Маркер міста — координати центру Тернополя; це не адміністративний контур міста.")}</p>
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(240px,1fr)]">
+            <div className="min-w-0 overflow-hidden rounded-lg border bg-muted/20 p-2">
+              <svg viewBox="0 0 900 560" role="img" aria-label={tr("Карта Кременецького, Тернопільського, Чортківського районів і міста Тернополя")} className="mx-auto h-auto max-h-[480px] w-full">
+                {features.map((f, i) => {
+                  const group = getFeatureGroup(f);
+                  const row = group ? findRow(group.aliases) : undefined;
+                  const isActive = !!row && selected === row.administrative_territory;
+                  const isDimmed = !!selected && !!row && !isActive;
+                  return <path key={i} d={ringsToPath(f.geometry?.coordinates)} fill={mapFill(row)}
+                    fillOpacity={isDimmed ? 0.35 : hovered && hovered !== row?.administrative_territory ? 0.78 : 0.94}
+                    stroke={isActive || hovered === row?.administrative_territory ? "var(--foreground)" : "var(--background)"}
+                    strokeWidth={isActive || hovered === row?.administrative_territory ? 3 : 2}
+                    vectorEffect="non-scaling-stroke" className="cursor-pointer transition-all"
+                    onMouseEnter={() => row && setHovered(row.administrative_territory ?? null)}
+                    onMouseLeave={() => setHovered(null)}
+                    onClick={() => row && onSelect(isActive ? null : row.administrative_territory ?? null)}>
+                    <title>{tr(group?.label ?? featureLabel(f) ?? "Район")} · {tr(activeMetric.label)}: {fmtMetric(row)}</title>
+                  </path>;
+                })}
+                <g className="cursor-pointer" onMouseEnter={() => cityRow && setHovered(cityRow.administrative_territory ?? null)} onMouseLeave={() => setHovered(null)}
+                  onClick={() => cityRow && onSelect(citySelected ? null : cityRow.administrative_territory ?? null)}>
+                  <circle cx={cityPoint[0]} cy={cityPoint[1]} r="11" fill={mapFill(cityRow)} stroke={citySelected ? "var(--foreground)" : "var(--background)"} strokeWidth="3" />
+                  <circle cx={cityPoint[0]} cy={cityPoint[1]} r="3" fill="var(--foreground)" />
+                  <text x={cityPoint[0] + 15} y={cityPoint[1] - 12} fontSize="15" fontWeight="700" fill="var(--foreground)" stroke="var(--background)" strokeWidth="4" paintOrder="stroke">{tr("м. Тернопіль")}</text>
+                  <title>{tr("м. Тернопіль")} · {tr(activeMetric.label)}: {fmtMetric(cityRow)}</title>
+                </g>
+              </svg>
+              <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                <span>{tr("Мінімум")}: {fmt(minValue, activeMetric.digits)}</span>
+                <span className="h-2.5 min-w-20 flex-1 rounded-full" style={{ background: "linear-gradient(90deg, #dbeafe, #b91c1c)" }} />
+                <span>{tr("Максимум")}: {fmt(maxValue, activeMetric.digits)}</span>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {selectedRows.map((group) => {
+                const row = findRow(group.aliases);
+                const active = !!row && selected === row.administrative_territory;
+                const isHovered = !!row && hovered === row.administrative_territory;
+                return <button key={group.key} onMouseEnter={() => row && setHovered(row.administrative_territory ?? null)} onMouseLeave={() => setHovered(null)}
+                  onClick={() => row && onSelect(active ? null : row.administrative_territory ?? null)}
+                  className={`w-full rounded-lg border p-3 text-left transition-colors hover:bg-muted/60 ${active || isHovered ? "border-primary bg-accent" : "bg-card"}`}>
+                  <div className="flex items-center gap-2 text-sm font-semibold"><span className="h-3 w-3 shrink-0 rounded-sm" style={{ background: mapFill(row) }} />{tr(group.label)}</div>
+                  <div className="mt-2 flex items-baseline justify-between gap-2"><span className="text-xs text-muted-foreground">{tr(activeMetric.label)}</span><strong className="text-right text-lg tabular-nums">{fmtMetric(row)}</strong></div>
+                  <div className="mt-1 grid grid-cols-2 gap-x-2 text-xs text-muted-foreground"><span>{tr("Випадки")}: {fmt(num(row?.cases_total))}</span><span>{tr("Діти")}: {fmt(num(row?.cases_children_under_18))}</span><span>{tr("Госпіталізовано")}: {fmt(num(row?.hospitalized_total))}</span><span>{tr("Рівень")}: {row ? tr(levelLabel[mapLevel(row)]) : tr("Немає даних")}</span></div>
+                </button>;
+              })}
+              <button onMouseEnter={() => cityRow && setHovered(cityRow.administrative_territory ?? null)} onMouseLeave={() => setHovered(null)}
+                onClick={() => cityRow && onSelect(citySelected ? null : cityRow.administrative_territory ?? null)}
+                className={`w-full rounded-lg border p-3 text-left transition-colors hover:bg-muted/60 ${citySelected || hovered === cityRow?.administrative_territory ? "border-primary bg-accent" : "bg-card"}`}>
+                <div className="flex items-center gap-2 text-sm font-semibold"><span className="h-3 w-3 shrink-0 rounded-full" style={{ background: mapFill(cityRow) }} />{tr("м. Тернопіль")}</div>
+                <div className="mt-2 flex items-baseline justify-between gap-2"><span className="text-xs text-muted-foreground">{tr(activeMetric.label)}</span><strong className="text-right text-lg tabular-nums">{fmtMetric(cityRow)}</strong></div>
+                <div className="mt-1 grid grid-cols-2 gap-x-2 text-xs text-muted-foreground"><span>{tr("Випадки")}: {fmt(num(cityRow?.cases_total))}</span><span>{tr("Діти")}: {fmt(num(cityRow?.cases_children_under_18))}</span><span>{tr("Госпіталізовано")}: {fmt(num(cityRow?.hospitalized_total))}</span><span>{tr("Рівень")}: {cityRow ? tr(levelLabel[mapLevel(cityRow)]) : tr("Немає даних")}</span></div>
+              </button>
+              <div className="rounded-lg border p-3 text-xs text-muted-foreground">
+                {activeRow ? <><div className="font-semibold text-foreground">{activeInfo}</div><div className="mt-1">{tr(activeMetric.label)}: <strong className="text-foreground">{fmtMetric(activeRow)}</strong></div></> : tr("Наведіть курсор або натисніть на територію, щоб переглянути показники.")}
+                <p className="mt-2">{tr("Колір відображає відносне значення вибраного показника серед територій; сірий колір означає відсутність даних.")}</p>
+              </div>
+              <p className="text-xs text-muted-foreground">{tr("Геодані:")} <a className="underline" href="https://github.com/slawomirmatuszak/ukrainian_geodata" target="_blank" rel="noreferrer">Ukrainian geodata (CC BY 4.0)</a>{tr(". Маркер міста — координати центру Тернополя; це не адміністративний контур міста.")}</p>
+            </div>
           </div>
         </div>
       )}
